@@ -4,6 +4,7 @@ import com.dani.bookit.dto.UserRequestDto;
 import com.dani.bookit.dto.UserResponseDto;
 import com.dani.bookit.entities.Role;
 import com.dani.bookit.entities.User;
+import com.dani.bookit.exceptions.EmailAlreadyInUseException;
 import com.dani.bookit.mappers.UserMapper;
 import com.dani.bookit.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class UserService {
     public UserResponseDto register(UserRequestDto dto){
 
         if (repository.existsByEmail(dto.getEmail())){
-            throw new RuntimeException("Email already in use");
+            throw new EmailAlreadyInUseException("Email already in use");
         }
         User newUser = UserMapper.toEntity(dto);
 
