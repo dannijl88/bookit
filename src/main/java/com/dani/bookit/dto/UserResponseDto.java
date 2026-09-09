@@ -1,8 +1,6 @@
 package com.dani.bookit.dto;
 
 import com.dani.bookit.entities.Role;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

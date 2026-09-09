@@ -20,7 +20,7 @@ public class BusinessMapper {
 
     }
 
-    public static BusinessResponseDto toDto(Business business){
+    public static BusinessResponseDto toResponseDto(Business business){
 
         BusinessResponseDto dto = new BusinessResponseDto();
         dto.setId(business.getId());
