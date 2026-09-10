@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceResponseDto {
+public class ServiceOfferingResponseDto {
 
     private Long id;
     private String name;

@@ -4,7 +4,7 @@ import com.dani.bookit.dto.BusinessRequestDto;
 import com.dani.bookit.dto.BusinessResponseDto;
 import com.dani.bookit.entities.Business;
 import com.dani.bookit.entities.User;
-import com.dani.bookit.exceptions.UserNotFoundException;
+import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.mappers.BusinessMapper;
 import com.dani.bookit.repositories.BusinessRepository;
 import com.dani.bookit.repositories.UserRepository;
@@ -20,7 +20,7 @@ public class BusinessService {
 
      public BusinessResponseDto create(BusinessRequestDto dto, Long ownerId){
 
-         User user = userRepository.findById(ownerId).orElseThrow(() -> new UserNotFoundException("User not found with id: " + ownerId));
+         User user = userRepository.findById(ownerId).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + ownerId));
 
          Business newBusiness = BusinessMapper.toEntity(dto, user);
          repository.save(newBusiness);

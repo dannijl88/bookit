@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ServiceRequestDto {
+public class ServiceOfferingRequestDto {
 
     @NotBlank
     private String name;
