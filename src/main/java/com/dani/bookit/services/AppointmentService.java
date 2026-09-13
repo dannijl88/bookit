@@ -2,10 +2,8 @@ package com.dani.bookit.services;
 
 import com.dani.bookit.dto.AppointmentRequestDto;
 import com.dani.bookit.dto.AppointmentResponseDto;
-import com.dani.bookit.entities.Appointment;
-import com.dani.bookit.entities.Employee;
-import com.dani.bookit.entities.ServiceOffering;
-import com.dani.bookit.entities.User;
+import com.dani.bookit.dto.UpdateStatusDto;
+import com.dani.bookit.entities.*;
 import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.mappers.AppointmentMapper;
 import com.dani.bookit.repositories.AppointmentRepository;
@@ -35,6 +33,16 @@ public class AppointmentService {
         Appointment newAppointment = AppointmentMapper.toEntity(dto, serviceOffering, employee, user);
         repository.save(newAppointment);
         return AppointmentMapper.toDto(newAppointment);
+
+    }
+
+    public AppointmentResponseDto updateStatus(Long appointmentId, UpdateStatusDto dto){
+
+        Appointment appointment = repository.findById(appointmentId).orElseThrow(() ->
+                new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
+        appointment.setStatus(dto.getStatus());
+        repository.save(appointment);
+        return AppointmentMapper.toDto(appointment);
 
     }
 
