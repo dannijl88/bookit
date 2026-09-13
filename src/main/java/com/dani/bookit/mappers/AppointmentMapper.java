@@ -21,7 +21,7 @@ public class AppointmentMapper {
 
         AppointmentResponseDto dto = new AppointmentResponseDto();
         dto.setId(appointment.getId());
-        dto.setStatus(Status.PENDING);
+        dto.setStatus(appointment.getStatus());
         dto.setAppointmentDateTime(appointment.getAppointmentDatetime());
         dto.setEmployeeId(appointment.getEmployee().getId());
         dto.setEmployeeName(appointment.getEmployee().getName());
