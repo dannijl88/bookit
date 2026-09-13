@@ -2,6 +2,7 @@ package com.dani.bookit.controllers;
 
 import com.dani.bookit.dto.AppointmentRequestDto;
 import com.dani.bookit.dto.AppointmentResponseDto;
+import com.dani.bookit.dto.UpdateStatusDto;
 import com.dani.bookit.services.AppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,12 @@ public class AppointmentController {
 
         AppointmentResponseDto dto = service.create(appointmentRequestDto, clientId);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<AppointmentResponseDto> updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateStatusDto updateDto){
+        AppointmentResponseDto dto = service.updateStatus(id, updateDto);
+        return ResponseEntity.ok().body(dto);
     }
 
 }
