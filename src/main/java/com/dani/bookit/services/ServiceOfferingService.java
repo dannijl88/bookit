@@ -4,6 +4,7 @@ import com.dani.bookit.dto.ServiceOfferingRequestDto;
 import com.dani.bookit.dto.ServiceOfferingResponseDto;
 import com.dani.bookit.entities.Business;
 import com.dani.bookit.entities.ServiceOffering;
+import com.dani.bookit.exceptions.AccessDeniedCustomException;
 import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.mappers.ServiceOfferingMapper;
 import com.dani.bookit.repositories.BusinessRepository;
@@ -18,9 +19,12 @@ public class ServiceOfferingService {
     private final ServiceOfferingRepository repository;
     private final BusinessRepository businessRepository;
 
-    public ServiceOfferingResponseDto create(ServiceOfferingRequestDto dto, Long businessId){
+    public ServiceOfferingResponseDto create(ServiceOfferingRequestDto dto, Long businessId, Long userId){
 
         Business business = businessRepository.findById(businessId).orElseThrow(() -> new ResourceNotFoundException("Business not found with id: " + businessId));
+        if(!business.getOwner().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
         ServiceOffering newServiceOffering = ServiceOfferingMapper.toEntity(dto, business);
         repository.save(newServiceOffering);
         return ServiceOfferingMapper.toServiceResponse(newServiceOffering);

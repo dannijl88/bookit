@@ -23,7 +23,7 @@ public class EmployeeService {
         Business business = businessRepository.findById(businessId).orElseThrow(() ->
                 new ResourceNotFoundException("Business not found with id:" + businessId));
         if(!business.getOwner().getId().equals(userId)){
-            throw new AccessDeniedCustomException("No tienes permiso");
+            throw new AccessDeniedCustomException("You don't have permission");
         }
         Employee newEmployee = EmployeeMapper.toEntity(employeeRequestDto, business);
         repository.save(newEmployee);
