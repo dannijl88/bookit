@@ -1,6 +1,5 @@
 package com.dani.bookit.security;
 
-import com.dani.bookit.entities.Employee;
 import com.dani.bookit.entities.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -32,9 +31,5 @@ public class CustomUserDetails implements UserDetails {
 
     public User getUser(){
         return user;
-    }
-
-    public Employee getEmployee(){
-        return user.get
     }
 }
