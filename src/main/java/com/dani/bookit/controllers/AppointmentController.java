@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +22,7 @@ public class AppointmentController {
     private final AppointmentService service;
 
     @PostMapping
+    @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<AppointmentResponseDto> create(@Valid @RequestBody AppointmentRequestDto appointmentRequestDto, @AuthenticationPrincipal CustomUserDetails userDetails){
 
         AppointmentResponseDto dto = service.create(appointmentRequestDto, userDetails.getUser().getId());
@@ -28,6 +30,7 @@ public class AppointmentController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('BUSINESS_OWNER', 'ADMIN')")
     public ResponseEntity<AppointmentResponseDto> updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateStatusDto updateDto, @AuthenticationPrincipal CustomUserDetails userDetails){
         AppointmentResponseDto dto = service.updateStatus(id, updateDto, userDetails.getUser().getId());
         return ResponseEntity.ok().body(dto);

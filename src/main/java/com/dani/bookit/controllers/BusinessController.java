@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ public class BusinessController {
     private final BusinessService service;
 
     @PostMapping
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
     public ResponseEntity<BusinessResponseDto> create(@Valid @RequestBody BusinessRequestDto dto, @AuthenticationPrincipal CustomUserDetails userDetails){
         Long ownerId = userDetails.getUser().getId();
         BusinessResponseDto business = service.create(dto, ownerId);
