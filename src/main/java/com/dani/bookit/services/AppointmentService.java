@@ -4,6 +4,7 @@ import com.dani.bookit.dto.AppointmentRequestDto;
 import com.dani.bookit.dto.AppointmentResponseDto;
 import com.dani.bookit.dto.UpdateStatusDto;
 import com.dani.bookit.entities.*;
+import com.dani.bookit.exceptions.AccessDeniedCustomException;
 import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.mappers.AppointmentMapper;
 import com.dani.bookit.repositories.AppointmentRepository;
@@ -36,10 +37,13 @@ public class AppointmentService {
 
     }
 
-    public AppointmentResponseDto updateStatus(Long appointmentId, UpdateStatusDto dto){
+    public AppointmentResponseDto updateStatus(Long appointmentId, UpdateStatusDto dto, Long userId){
 
         Appointment appointment = repository.findById(appointmentId).orElseThrow(() ->
                 new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
+        if (!appointment.getEmployee().getBusiness().getOwner().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
         appointment.setStatus(dto.getStatus());
         repository.save(appointment);
         return AppointmentMapper.toDto(appointment);
