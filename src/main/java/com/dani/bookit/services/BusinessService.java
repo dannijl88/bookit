@@ -9,6 +9,8 @@ import com.dani.bookit.mappers.BusinessMapper;
 import com.dani.bookit.repositories.BusinessRepository;
 import com.dani.bookit.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,4 +28,9 @@ public class BusinessService {
          repository.save(newBusiness);
          return BusinessMapper.toResponseDto(newBusiness);
      }
+
+     public Page<BusinessResponseDto> findByCategory(String category, Pageable pageable){
+         return repository.findByCategory(category, pageable).map(BusinessMapper::toResponseDto);
+     }
+
 }
