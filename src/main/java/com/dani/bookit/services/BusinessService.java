@@ -30,7 +30,7 @@ public class BusinessService {
      }
 
      public Page<BusinessResponseDto> findByCategory(String category, Pageable pageable){
-         return repository.findByCategory(category, pageable).map(BusinessMapper::toResponseDto);
+         return repository.findByCategoryIgnoreCase(category, pageable).map(BusinessMapper::toResponseDto);
      }
 
 }
