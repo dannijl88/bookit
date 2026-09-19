@@ -35,8 +35,8 @@ public class ServiceOffering {
     @Min(30)
     private Integer duration;
 
-    @ManyToOne
-    @JoinColumn(name = "business_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "business_id", nullable = false)
     private Business business;
 
 }

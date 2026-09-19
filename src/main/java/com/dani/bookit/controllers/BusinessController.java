@@ -2,8 +2,10 @@ package com.dani.bookit.controllers;
 
 import com.dani.bookit.dto.BusinessRequestDto;
 import com.dani.bookit.dto.BusinessResponseDto;
+import com.dani.bookit.dto.ServiceOfferingResponseDto;
 import com.dani.bookit.security.CustomUserDetails;
 import com.dani.bookit.services.BusinessService;
+import com.dani.bookit.services.ServiceOfferingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,12 +16,15 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/businesses")
 @RequiredArgsConstructor
 public class BusinessController {
 
     private final BusinessService service;
+    private final ServiceOfferingService serviceOfferingService;
 
     @PostMapping
     @PreAuthorize("hasRole('BUSINESS_OWNER')")
@@ -32,6 +37,12 @@ public class BusinessController {
     @GetMapping
     public ResponseEntity<Page<BusinessResponseDto>> getBusinesses(@RequestParam String category, Pageable pageable){
         return ResponseEntity.ok(service.findByCategory(category, pageable));
+    }
+
+    @GetMapping("/{businessId}/services")
+    public ResponseEntity<List<ServiceOfferingResponseDto>> findByBusiness(@PathVariable Long businessId){
+        List<ServiceOfferingResponseDto> services = serviceOfferingService.findByBusiness(businessId);
+        return ResponseEntity.ok(services);
     }
 
 }

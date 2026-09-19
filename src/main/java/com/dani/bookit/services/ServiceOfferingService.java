@@ -12,6 +12,8 @@ import com.dani.bookit.repositories.ServiceOfferingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ServiceOfferingService {
@@ -21,13 +23,23 @@ public class ServiceOfferingService {
 
     public ServiceOfferingResponseDto create(ServiceOfferingRequestDto dto, Long businessId, Long userId){
 
-        Business business = businessRepository.findById(businessId).orElseThrow(() -> new ResourceNotFoundException("Business not found with id: " + businessId));
+        Business business = businessRepository.findById(businessId).orElseThrow(() ->
+                new ResourceNotFoundException("Business not found with id: " + businessId));
         if(!business.getOwner().getId().equals(userId)){
             throw new AccessDeniedCustomException("You don't have permission");
         }
         ServiceOffering newServiceOffering = ServiceOfferingMapper.toEntity(dto, business);
         repository.save(newServiceOffering);
         return ServiceOfferingMapper.toServiceResponse(newServiceOffering);
+
+    }
+
+    public List<ServiceOfferingResponseDto> findByBusiness(Long businessId){
+
+        Business business = businessRepository.findById(businessId).orElseThrow(() ->
+                new ResourceNotFoundException("Business not found with id: " + businessId));
+        return repository.findByBusiness(business).stream().map(ServiceOfferingMapper::toServiceResponse).toList();
+
 
     }
 
