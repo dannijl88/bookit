@@ -6,11 +6,14 @@ import com.dani.bookit.entities.Employee;
 import com.dani.bookit.entities.EmployeeSchedule;
 import com.dani.bookit.exceptions.AccessDeniedCustomException;
 import com.dani.bookit.exceptions.ResourceNotFoundException;
+import com.dani.bookit.exceptions.ScheduleOverlapException;
 import com.dani.bookit.mappers.EmployeeScheduleMapper;
 import com.dani.bookit.repositories.EmployeeRepository;
 import com.dani.bookit.repositories.EmployeeScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,13 @@ public class EmployeeScheduleService {
 
         if(!employee.getBusiness().getOwner().getId().equals(userId)){
             throw new AccessDeniedCustomException("You don't have permission");
+        }
+
+        List<EmployeeSchedule> schedules = repository.findByEmployeeAndDayOfWeek(employee, dto.getDayOfWeek());
+        boolean overlaps = schedules.stream().anyMatch(schedule ->
+                dto.getStartTime().isBefore(schedule.getEndTime()) && schedule.getStartTime().isBefore(dto.getEndTime()));
+        if(overlaps){
+            throw new ScheduleOverlapException("This schedule overlaps with existing schedule");
         }
 
         EmployeeSchedule newSchedule = EmployeeScheduleMapper.toEntity(dto, employee);

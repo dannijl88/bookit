@@ -1,5 +1,6 @@
 package com.dani.bookit.exceptions;
 
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,6 +27,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedCustomException.class)
     public ResponseEntity<String> handleAccessDeniedException(AccessDeniedCustomException ex){
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(ScheduleOverlapException.class)
+    public ResponseEntity<String> handleScheduleOverlapException(ScheduleOverlapException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
     }
 
 }
