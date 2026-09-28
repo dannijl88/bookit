@@ -1,5 +1,6 @@
 package com.dani.bookit.dto;
 
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 public class AppointmentRequestDto {
 
     @NotNull
+    @Future
     private LocalDateTime appointmentDateTime;
 
     @NotNull

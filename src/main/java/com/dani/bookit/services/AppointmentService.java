@@ -6,6 +6,7 @@ import com.dani.bookit.dto.UpdateStatusDto;
 import com.dani.bookit.entities.*;
 import com.dani.bookit.exceptions.AccessDeniedCustomException;
 import com.dani.bookit.exceptions.ResourceNotFoundException;
+import com.dani.bookit.exceptions.ScheduleOverlapException;
 import com.dani.bookit.mappers.AppointmentMapper;
 import com.dani.bookit.repositories.AppointmentRepository;
 import com.dani.bookit.repositories.EmployeeRepository;
@@ -13,6 +14,10 @@ import com.dani.bookit.repositories.ServiceOfferingRepository;
 import com.dani.bookit.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +27,7 @@ public class AppointmentService {
     private final UserRepository userRepository;
     private final ServiceOfferingRepository serviceOfferingRepository;
     private final EmployeeRepository employeeRepository;
+    private final AvailabilityService availabilityService;
 
     public AppointmentResponseDto create(AppointmentRequestDto dto, Long userId){
 
@@ -30,8 +36,12 @@ public class AppointmentService {
                 new ResourceNotFoundException("Service offering not found with id:" + dto.getServiceId()));
         Employee employee = employeeRepository.findById(dto.getEmployeeId()).orElseThrow(() ->
                 new ResourceNotFoundException("Employee not found with id:" + dto.getEmployeeId()));
-
+        List<LocalTime> availableSlots = availabilityService.getAvailableSlots(dto.getEmployeeId(), dto.getServiceId(), dto.getAppointmentDateTime().toLocalDate());
+        if(!availableSlots.contains(dto.getAppointmentDateTime().toLocalTime())){
+            throw new ScheduleOverlapException("Slot not available");
+        }
         Appointment newAppointment = AppointmentMapper.toEntity(dto, serviceOffering, employee, user);
+        newAppointment.setStatus(Status.PENDING);
         repository.save(newAppointment);
         return AppointmentMapper.toDto(newAppointment);
 
