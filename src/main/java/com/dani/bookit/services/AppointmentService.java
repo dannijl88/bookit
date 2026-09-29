@@ -8,10 +8,7 @@ import com.dani.bookit.exceptions.AccessDeniedCustomException;
 import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.exceptions.ScheduleOverlapException;
 import com.dani.bookit.mappers.AppointmentMapper;
-import com.dani.bookit.repositories.AppointmentRepository;
-import com.dani.bookit.repositories.EmployeeRepository;
-import com.dani.bookit.repositories.ServiceOfferingRepository;
-import com.dani.bookit.repositories.UserRepository;
+import com.dani.bookit.repositories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -32,6 +29,7 @@ public class AppointmentService {
     private final ServiceOfferingRepository serviceOfferingRepository;
     private final EmployeeRepository employeeRepository;
     private final AvailabilityService availabilityService;
+    private final BusinessRepository businessRepository;
 
     @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto create(AppointmentRequestDto dto, Long userId){
@@ -83,6 +81,16 @@ public class AppointmentService {
         repository.save(appointment);
         return AppointmentMapper.toDto(appointment);
 
+    }
+
+    public Page<AppointmentResponseDto> findByBusiness(Long businessId, Long userId, Pageable pageable){
+        Business business = businessRepository.findById(businessId).orElseThrow(() ->
+                new ResourceNotFoundException("Business not found with id: " + businessId));
+        if(!business.getOwner().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
+
+        return repository.findByEmployee_Business(business, pageable).map(AppointmentMapper::toDto);
     }
 
 }

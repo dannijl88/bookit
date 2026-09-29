@@ -1,9 +1,11 @@
 package com.dani.bookit.controllers;
 
+import com.dani.bookit.dto.AppointmentResponseDto;
 import com.dani.bookit.dto.BusinessRequestDto;
 import com.dani.bookit.dto.BusinessResponseDto;
 import com.dani.bookit.dto.ServiceOfferingResponseDto;
 import com.dani.bookit.security.CustomUserDetails;
+import com.dani.bookit.services.AppointmentService;
 import com.dani.bookit.services.BusinessService;
 import com.dani.bookit.services.ServiceOfferingService;
 import jakarta.validation.Valid;
@@ -25,6 +27,7 @@ public class BusinessController {
 
     private final BusinessService service;
     private final ServiceOfferingService serviceOfferingService;
+    private final AppointmentService appointmentService;
 
     @PostMapping
     @PreAuthorize("hasRole('BUSINESS_OWNER')")
@@ -43,6 +46,13 @@ public class BusinessController {
     public ResponseEntity<List<ServiceOfferingResponseDto>> findByBusiness(@PathVariable Long businessId){
         List<ServiceOfferingResponseDto> services = serviceOfferingService.findByBusiness(businessId);
         return ResponseEntity.ok(services);
+    }
+
+    @GetMapping("/{businessId}/appointments")
+    public ResponseEntity<Page<AppointmentResponseDto>> findByEmployee(
+            @PathVariable Long businessId, @AuthenticationPrincipal CustomUserDetails userDetails, Pageable pageable){
+        Page<AppointmentResponseDto> dto = appointmentService.findByBusiness(businessId, userDetails.getUser().getId(), pageable);
+        return ResponseEntity.ok().body(dto);
     }
 
 }
