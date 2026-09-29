@@ -45,4 +45,10 @@ public class AppointmentController {
         return ResponseEntity.ok().body(appointments);
     }
 
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<AppointmentResponseDto> cancel(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        AppointmentResponseDto dto = service.cancel(id, userDetails.getUser().getId());
+        return ResponseEntity.ok().body(dto);
+    }
+
 }

@@ -13,6 +13,7 @@ import com.dani.bookit.repositories.EmployeeRepository;
 import com.dani.bookit.repositories.ServiceOfferingRepository;
 import com.dani.bookit.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ public class AppointmentService {
     private final EmployeeRepository employeeRepository;
     private final AvailabilityService availabilityService;
 
+    @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto create(AppointmentRequestDto dto, Long userId){
 
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found with id:" + userId));
@@ -50,6 +52,7 @@ public class AppointmentService {
 
     }
 
+    @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto updateStatus(Long appointmentId, UpdateStatusDto dto, Long userId){
 
         Appointment appointment = repository.findById(appointmentId).orElseThrow(() ->
@@ -63,10 +66,23 @@ public class AppointmentService {
 
     }
 
-    @Cacheable(value = "appointments", key = "#appointment + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
+    @Cacheable(value = "appointments", key = "#userId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<AppointmentResponseDto> findByClient(Long userId, Pageable pageable){
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         return repository.findByClient(user, pageable).map(AppointmentMapper::toDto);
+    }
+
+    @CacheEvict(value = "appointments", allEntries = true)
+    public AppointmentResponseDto cancel(Long appointmentId, Long userId){
+        Appointment appointment = repository.findById(appointmentId).orElseThrow(() ->
+                new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
+        if(!appointment.getClient().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
+        appointment.setStatus(Status.CANCELLED);
+        repository.save(appointment);
+        return AppointmentMapper.toDto(appointment);
+
     }
 
 }
