@@ -8,11 +8,14 @@ import com.dani.bookit.services.AppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -34,6 +37,12 @@ public class AppointmentController {
     public ResponseEntity<AppointmentResponseDto> updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateStatusDto updateDto, @AuthenticationPrincipal CustomUserDetails userDetails){
         AppointmentResponseDto dto = service.updateStatus(id, updateDto, userDetails.getUser().getId());
         return ResponseEntity.ok().body(dto);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Page<AppointmentResponseDto>> getMyAppointments(@AuthenticationPrincipal CustomUserDetails userDetails, Pageable pageable){
+        Page<AppointmentResponseDto> appointments = service.findByClient(userDetails.getUser().getId(), pageable);
+        return ResponseEntity.ok().body(appointments);
     }
 
 }

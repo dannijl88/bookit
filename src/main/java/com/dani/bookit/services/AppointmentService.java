@@ -13,6 +13,9 @@ import com.dani.bookit.repositories.EmployeeRepository;
 import com.dani.bookit.repositories.ServiceOfferingRepository;
 import com.dani.bookit.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -58,6 +61,12 @@ public class AppointmentService {
         repository.save(appointment);
         return AppointmentMapper.toDto(appointment);
 
+    }
+
+    @Cacheable(value = "appointments", key = "#appointment + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
+    public Page<AppointmentResponseDto> findByClient(Long userId, Pageable pageable){
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        return repository.findByClient(user, pageable).map(AppointmentMapper::toDto);
     }
 
 }
