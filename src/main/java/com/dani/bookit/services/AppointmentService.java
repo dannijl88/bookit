@@ -30,6 +30,7 @@ public class AppointmentService {
     private final EmployeeRepository employeeRepository;
     private final AvailabilityService availabilityService;
     private final BusinessRepository businessRepository;
+    private final EmailService emailService;
 
     @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto create(AppointmentRequestDto dto, Long userId){
@@ -46,6 +47,11 @@ public class AppointmentService {
         Appointment newAppointment = AppointmentMapper.toEntity(dto, serviceOffering, employee, user);
         newAppointment.setStatus(Status.PENDING);
         repository.save(newAppointment);
+        try {
+            emailService.sendEmail(user.getEmail(), "Cita creada", "Tu cita ha sido creada para el " + dto.getAppointmentDateTime());
+        } catch (Exception e) {
+            System.out.println("Error enviando email: " + e.getMessage());
+        }
         return AppointmentMapper.toDto(newAppointment);
 
     }
