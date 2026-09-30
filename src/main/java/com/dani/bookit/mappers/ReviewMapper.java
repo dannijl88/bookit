@@ -26,6 +26,7 @@ public class ReviewMapper {
         dto.setServiceName(review.getAppointment().getServiceOffering().getName());
         dto.setEmployeeName(review.getAppointment().getEmployee().getName());
         dto.setAppointmentId(review.getAppointment().getId());
+        dto.setClientName(review.getAppointment().getClient().getName());
         return dto;
 
     }

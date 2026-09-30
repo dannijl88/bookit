@@ -16,6 +16,6 @@ public class ReviewResponseDto {
     private Long appointmentId;
     private String serviceName;
     private String employeeName;
-
+    private String clientName;
 
 }

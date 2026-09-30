@@ -1,12 +1,11 @@
 package com.dani.bookit.controllers;
 
-import com.dani.bookit.dto.AppointmentResponseDto;
-import com.dani.bookit.dto.BusinessRequestDto;
-import com.dani.bookit.dto.BusinessResponseDto;
-import com.dani.bookit.dto.ServiceOfferingResponseDto;
+import com.dani.bookit.dto.*;
+import com.dani.bookit.entities.Review;
 import com.dani.bookit.security.CustomUserDetails;
 import com.dani.bookit.services.AppointmentService;
 import com.dani.bookit.services.BusinessService;
+import com.dani.bookit.services.ReviewService;
 import com.dani.bookit.services.ServiceOfferingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +27,7 @@ public class BusinessController {
     private final BusinessService service;
     private final ServiceOfferingService serviceOfferingService;
     private final AppointmentService appointmentService;
+    private final ReviewService reviewService;
 
     @PostMapping
     @PreAuthorize("hasRole('BUSINESS_OWNER')")
@@ -52,6 +52,12 @@ public class BusinessController {
     public ResponseEntity<Page<AppointmentResponseDto>> findByEmployee(
             @PathVariable Long businessId, @AuthenticationPrincipal CustomUserDetails userDetails, Pageable pageable){
         Page<AppointmentResponseDto> dto = appointmentService.findByBusiness(businessId, userDetails.getUser().getId(), pageable);
+        return ResponseEntity.ok().body(dto);
+    }
+
+    @GetMapping("/{businessId}/reviews")
+    public ResponseEntity<Page<ReviewResponseDto>> getReviewsByBusiness(@PathVariable Long businessId, Pageable pageable){
+        Page<ReviewResponseDto> dto = reviewService.getReviewsByBusiness(businessId, pageable);
         return ResponseEntity.ok().body(dto);
     }
 
