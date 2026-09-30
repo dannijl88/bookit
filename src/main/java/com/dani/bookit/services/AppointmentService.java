@@ -58,7 +58,6 @@ public class AppointmentService {
 
     @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto updateStatus(Long appointmentId, UpdateStatusDto dto, Long userId){
-
         Appointment appointment = repository.findById(appointmentId).orElseThrow(() ->
                 new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
         if (!appointment.getEmployee().getBusiness().getOwner().getId().equals(userId)){
@@ -66,6 +65,11 @@ public class AppointmentService {
         }
         appointment.setStatus(dto.getStatus());
         repository.save(appointment);
+        try {
+            emailService.sendEmail(appointment.getClient().getEmail(), "Estado de la cita actualizado", "Tu cita ha sido " + dto.getStatus());
+        } catch (Exception e) {
+            System.out.println("Error enviando email: " + e.getMessage());
+        }
         return AppointmentMapper.toDto(appointment);
 
     }
@@ -78,6 +82,7 @@ public class AppointmentService {
 
     @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto cancel(Long appointmentId, Long userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found with id:" + userId));
         Appointment appointment = repository.findById(appointmentId).orElseThrow(() ->
                 new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
         if(!appointment.getClient().getId().equals(userId)){
@@ -85,6 +90,11 @@ public class AppointmentService {
         }
         appointment.setStatus(Status.CANCELLED);
         repository.save(appointment);
+        try {
+            emailService.sendEmail(user.getEmail(), "Cita cancelada", "Tu cita con fecha " + appointment.getAppointmentDatetime() + " ha sido cancelada");
+        } catch (Exception e) {
+            System.out.println("Error enviando email: " + e.getMessage());
+        }
         return AppointmentMapper.toDto(appointment);
 
     }
