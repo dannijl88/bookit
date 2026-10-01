@@ -20,6 +20,7 @@ public class EmployeeMapper {
         dto.setName(employee.getName());
         dto.setBusinessId(employee.getBusiness().getId());
         dto.setBusinessName(employee.getBusiness().getName());
+        dto.setActive(employee.getActive());
         return dto;
     }
 

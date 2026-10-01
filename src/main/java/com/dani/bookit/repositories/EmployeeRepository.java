@@ -9,5 +9,6 @@ import java.util.List;
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     public List<Employee> findByBusiness(Business business);
+    List<Employee> findByBusinessAndActiveTrue(Business business);
 
 }

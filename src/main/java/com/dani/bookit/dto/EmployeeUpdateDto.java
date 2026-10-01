@@ -1,19 +1,17 @@
 package com.dani.bookit.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Setter @Getter
-@NoArgsConstructor
+@Getter @Setter
 @AllArgsConstructor
-public class EmployeeResponseDto {
+@NoArgsConstructor
+public class EmployeeUpdateDto {
 
-    private Long id;
+    @NotBlank
     private String name;
-    private Boolean active;
-    private Long businessId;
-    private String businessName;
 
 }

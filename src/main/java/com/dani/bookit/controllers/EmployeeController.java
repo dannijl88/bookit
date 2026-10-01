@@ -26,4 +26,25 @@ public class EmployeeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(employee);
     }
 
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<EmployeeResponseDto> update(@Valid @RequestBody EmployeeRequestDto dto, @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        EmployeeResponseDto updatedDto = service.update(id, userDetails.getUser().getId(), dto);
+        return ResponseEntity.ok().body(updatedDto);
+    }
+
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<EmployeeResponseDto> activate(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        EmployeeResponseDto dto = service.activate(id, userDetails.getUser().getId());
+        return ResponseEntity.ok().body(dto);
+    }
+
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<EmployeeResponseDto> deactivate(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        EmployeeResponseDto dto = service.deactivate(id, userDetails.getUser().getId());
+        return ResponseEntity.ok().body(dto);
+    }
+
 }
