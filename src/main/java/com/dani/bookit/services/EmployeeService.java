@@ -12,6 +12,8 @@ import com.dani.bookit.repositories.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class EmployeeService {
@@ -28,6 +30,12 @@ public class EmployeeService {
         Employee newEmployee = EmployeeMapper.toEntity(employeeRequestDto, business);
         repository.save(newEmployee);
         return EmployeeMapper.toEmployeeResponse(newEmployee);
+    }
+
+    public List<EmployeeResponseDto> findByBusiness(Long businessId){
+        Business business = businessRepository.findById(businessId).orElseThrow(() ->
+                new ResourceNotFoundException("Business not found with id:" + businessId));
+        return repository.findByBusiness(business).stream().map(EmployeeMapper::toEmployeeResponse).toList();
     }
 
 }
