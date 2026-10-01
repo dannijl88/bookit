@@ -9,5 +9,6 @@ import java.util.List;
 public interface ServiceOfferingRepository extends JpaRepository<ServiceOffering, Long> {
 
     List<ServiceOffering> findByBusiness(Business business);
+    List<ServiceOffering> findByBusinessAndActiveTrue(Business business);
 
 }

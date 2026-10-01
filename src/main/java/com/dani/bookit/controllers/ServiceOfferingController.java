@@ -23,11 +23,33 @@ public class ServiceOfferingController {
 
     @PostMapping
     @PreAuthorize("hasRole('BUSINESS_OWNER')")
-    public ResponseEntity<ServiceOfferingResponseDto> create(@Valid @RequestBody ServiceOfferingRequestDto dto, @RequestParam Long businessId, @AuthenticationPrincipal CustomUserDetails userDetails){
+    public ResponseEntity<ServiceOfferingResponseDto> create(
+            @Valid @RequestBody ServiceOfferingRequestDto dto, @RequestParam Long businessId, @AuthenticationPrincipal CustomUserDetails userDetails){
 
         ServiceOfferingResponseDto created = service.create(dto, businessId, userDetails.getUser().getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
 
     }
 
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    public ResponseEntity<ServiceOfferingResponseDto> update(
+            @Valid @RequestBody ServiceOfferingRequestDto dto, @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        ServiceOfferingResponseDto updatedDto = service.update(dto, id, userDetails.getUser().getId());
+        return ResponseEntity.ok().body(updatedDto);
+    }
+
+    @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    public ResponseEntity<ServiceOfferingResponseDto> activate(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        ServiceOfferingResponseDto updatedDto = service.activate(id, userDetails.getUser().getId());
+        return ResponseEntity.ok().body(updatedDto);
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    public ResponseEntity<ServiceOfferingResponseDto> deactivate(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        ServiceOfferingResponseDto updatedDto = service.deactivate(id, userDetails.getUser().getId());
+        return ResponseEntity.ok().body(updatedDto);
+    }
 }

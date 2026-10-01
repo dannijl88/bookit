@@ -26,6 +26,7 @@ public class ServiceOfferingMapper {
         dto.setPrice(serviceOffering.getPrice());
         dto.setBusinessId(serviceOffering.getBusiness().getId());
         dto.setBusinessName(serviceOffering.getBusiness().getName());
+        dto.setActive(serviceOffering.getActive());
         return dto;
     }
 

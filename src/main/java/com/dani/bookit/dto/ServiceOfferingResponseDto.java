@@ -17,5 +17,6 @@ public class ServiceOfferingResponseDto {
     private Integer duration;
     private Long businessId;
     private String businessName;
+    private Boolean active;
 
 }

@@ -38,9 +38,44 @@ public class ServiceOfferingService {
 
         Business business = businessRepository.findById(businessId).orElseThrow(() ->
                 new ResourceNotFoundException("Business not found with id: " + businessId));
-        return repository.findByBusiness(business).stream().map(ServiceOfferingMapper::toServiceResponse).toList();
+        return repository.findByBusinessAndActiveTrue(business).stream().map(ServiceOfferingMapper::toServiceResponse).toList();
 
+    }
 
+    public ServiceOfferingResponseDto update(ServiceOfferingRequestDto dto, Long serviceOfferingId, Long userId){
+
+        ServiceOffering serviceOffering = repository.findById(serviceOfferingId).orElseThrow(() ->
+                new ResourceNotFoundException("Service not found with id: " + serviceOfferingId));
+        if(!serviceOffering.getBusiness().getOwner().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
+        serviceOffering.setDescription(dto.getDescription());
+        serviceOffering.setDuration(dto.getDuration());
+        serviceOffering.setPrice(dto.getPrice());
+        repository.save(serviceOffering);
+        return ServiceOfferingMapper.toServiceResponse(serviceOffering);
+    }
+
+    public ServiceOfferingResponseDto activate(Long serviceOfferingId, Long userId){
+        ServiceOffering serviceOffering = repository.findById(serviceOfferingId).orElseThrow(() ->
+                new ResourceNotFoundException("Service not found with id: " + serviceOfferingId));
+        if(!serviceOffering.getBusiness().getOwner().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
+        serviceOffering.setActive(true);
+        repository.save(serviceOffering);
+        return ServiceOfferingMapper.toServiceResponse(serviceOffering);
+    }
+
+    public ServiceOfferingResponseDto deactivate(Long serviceOfferingId, Long userId){
+        ServiceOffering serviceOffering = repository.findById(serviceOfferingId).orElseThrow(() ->
+                new ResourceNotFoundException("Service not found with id: " + serviceOfferingId));
+        if(!serviceOffering.getBusiness().getOwner().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
+        serviceOffering.setActive(false);
+        repository.save(serviceOffering);
+        return ServiceOfferingMapper.toServiceResponse(serviceOffering);
     }
 
 }
