@@ -45,4 +45,34 @@ public class EmployeeScheduleService {
 
     }
 
+    public List<EmployeeScheduleResponseDto> findByEmployee(Long employeeId){
+        Employee employee = employeeRepository.findById(employeeId).orElseThrow(() ->
+                new ResourceNotFoundException("Employee not found with id: " + employeeId));
+        return repository.findByEmployee(employee).stream()
+                .map(EmployeeScheduleMapper::toResponseDto)
+                .toList();
+    }
+
+    public EmployeeScheduleResponseDto update(Long scheduleId, EmployeeScheduleRequestDto dto, Long userId){
+        EmployeeSchedule schedule = repository.findById(scheduleId).orElseThrow(() ->
+                new ResourceNotFoundException("Schedule not found with id: " + scheduleId));
+        if(!schedule.getEmployee().getBusiness().getOwner().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
+        schedule.setDayOfWeek(dto.getDayOfWeek());
+        schedule.setStartTime(dto.getStartTime());
+        schedule.setEndTime(dto.getEndTime());
+        repository.save(schedule);
+        return EmployeeScheduleMapper.toResponseDto(schedule);
+    }
+
+    public void delete(Long scheduleId, Long userId){
+        EmployeeSchedule schedule = repository.findById(scheduleId).orElseThrow(() ->
+                new ResourceNotFoundException("Schedule not found with id: " + scheduleId));
+        if(!schedule.getEmployee().getBusiness().getOwner().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
+        repository.delete(schedule);
+    }
+
 }

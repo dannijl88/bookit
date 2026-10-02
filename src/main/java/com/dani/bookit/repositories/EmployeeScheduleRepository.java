@@ -10,5 +10,6 @@ import java.util.List;
 public interface EmployeeScheduleRepository extends JpaRepository<EmployeeSchedule, Long> {
 
     List<EmployeeSchedule> findByEmployeeAndDayOfWeek(Employee employee, DayOfWeek dayOfWeek);
+    List<EmployeeSchedule> findByEmployee(Employee employee);
 
 }
