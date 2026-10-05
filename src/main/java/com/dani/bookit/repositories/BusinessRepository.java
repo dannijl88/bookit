@@ -11,6 +11,6 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
 
     List<Business> findByOwner(User owner);
     List<Business> findByCategory(String category);
-    Page<Business> findByCategoryIgnoreCase(String category, Pageable pageable);
+    Page<Business> findByCategoryIgnoreCaseAndActiveTrue(String category, Pageable pageable);
 
 }

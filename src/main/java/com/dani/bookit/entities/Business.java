@@ -2,6 +2,7 @@ package com.dani.bookit.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,6 +34,9 @@ public class Business {
     @NotBlank
     @Column(name = "opening_hours")
     private String openingHours;
+
+    @NotNull
+    private Boolean active = true;
 
     @ManyToOne
     @JoinColumn(name = "owner_id")

@@ -1,6 +1,7 @@
 package com.dani.bookit.controllers;
 
 import com.dani.bookit.dto.*;
+import com.dani.bookit.entities.Business;
 import com.dani.bookit.entities.Review;
 import com.dani.bookit.security.CustomUserDetails;
 import com.dani.bookit.services.*;
@@ -71,6 +72,20 @@ public class BusinessController {
     @GetMapping("/{businessId}/employees")
     public ResponseEntity<List<EmployeeResponseDto>> getEmployeeByBusiness(@PathVariable Long businessId){
         List<EmployeeResponseDto> dto = employeeService.findByBusiness(businessId);
+        return ResponseEntity.ok().body(dto);
+    }
+
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<BusinessResponseDto> activate(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        BusinessResponseDto dto = service.activate(id, userDetails.getUser().getId());
+        return ResponseEntity.ok().body(dto);
+    }
+
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<BusinessResponseDto> deactivate(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        BusinessResponseDto dto = service.deactivate(id, userDetails.getUser().getId());
         return ResponseEntity.ok().body(dto);
     }
 

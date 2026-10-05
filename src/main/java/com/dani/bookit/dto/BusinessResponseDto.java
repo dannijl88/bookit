@@ -16,6 +16,7 @@ public class BusinessResponseDto {
     private String phone;
     private String category;
     private String openingHours;
+    private Boolean active;
     private Long ownerId;
     private String ownerName;
 

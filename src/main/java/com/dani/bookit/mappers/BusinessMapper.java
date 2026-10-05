@@ -31,6 +31,7 @@ public class BusinessMapper {
         dto.setOpeningHours(business.getOpeningHours());
         dto.setOwnerId(business.getOwner().getId());
         dto.setOwnerName(business.getOwner().getName());
+        dto.setActive(business.getActive());
         return dto;
 
     }
