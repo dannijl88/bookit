@@ -4,6 +4,7 @@ import com.dani.bookit.dto.BusinessRequestDto;
 import com.dani.bookit.dto.BusinessResponseDto;
 import com.dani.bookit.entities.Business;
 import com.dani.bookit.entities.User;
+import com.dani.bookit.exceptions.AccessDeniedCustomException;
 import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.mappers.BusinessMapper;
 import com.dani.bookit.repositories.BusinessRepository;
@@ -35,6 +36,23 @@ public class BusinessService {
      @Cacheable(value = "businesses", key = "#category + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
      public Page<BusinessResponseDto> findByCategory(String category, Pageable pageable){
          return repository.findByCategoryIgnoreCase(category, pageable).map(BusinessMapper::toResponseDto);
+     }
+
+    @CacheEvict(value = "businesses", allEntries = true)
+     public BusinessResponseDto update(BusinessRequestDto dto, Long businessId, Long userId){
+
+        Business business = repository.findById(businessId).orElseThrow(() -> new ResourceNotFoundException("Business not found with id: " + businessId));
+        if(!business.getOwner().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
+        business.setName(dto.getName());
+        business.setPhone(dto.getPhone());
+        business.setCategory(dto.getCategory());
+        business.setOpeningHours(dto.getOpeningHours());
+        business.setAddress(dto.getAddress());
+        repository.save(business);
+        return BusinessMapper.toResponseDto(business);
+
      }
 
 }

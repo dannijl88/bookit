@@ -29,10 +29,19 @@ public class BusinessController {
 
     @PostMapping
     @PreAuthorize("hasRole('BUSINESS_OWNER')")
-    public ResponseEntity<BusinessResponseDto> create(@Valid @RequestBody BusinessRequestDto dto, @AuthenticationPrincipal CustomUserDetails userDetails){
+    public ResponseEntity<BusinessResponseDto> create(
+            @Valid @RequestBody BusinessRequestDto dto, @AuthenticationPrincipal CustomUserDetails userDetails){
         Long ownerId = userDetails.getUser().getId();
         BusinessResponseDto business = service.create(dto, ownerId);
         return ResponseEntity.status(HttpStatus.CREATED).body(business);
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    public ResponseEntity<BusinessResponseDto> update(
+            @Valid @RequestBody BusinessRequestDto dto, @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        BusinessResponseDto updatedDto = service.update(dto, id, userDetails.getUser().getId());
+        return ResponseEntity.ok().body(updatedDto);
     }
 
     @GetMapping
