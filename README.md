@@ -126,12 +126,30 @@ mvn spring-boot:run
 | PATCH | `/api/appointments/{id}/status` | Cambiar estado de una cita | `BUSINESS_OWNER` |
 | POST | `/api/reviews?appointmentId=` | Dejar reseña (solo citas `COMPLETED`) | `CLIENT` |
 
+## Documentación de la API (Swagger)
+
+La API está documentada con **OpenAPI 3** mediante springdoc, y se puede explorar y probar desde el navegador con Swagger UI. Con la aplicación en marcha:
+
+- **Swagger UI:** `http://localhost:8080/swagger-ui.html`
+- **Especificación OpenAPI (JSON):** `http://localhost:8080/v3/api-docs`
+
+Los endpoints están agrupados por recurso, con su descripción, parámetros y respuestas posibles.
+
+**Probar endpoints protegidos:**
+
+1. Registra un usuario con `POST /api/users` y haz login con `POST /api/auth/login`.
+2. Copia el token JWT de la respuesta.
+3. Pulsa el botón **Authorize** (arriba a la derecha) y pega el token (sin escribir `Bearer`).
+4. Ya puedes ejecutar cualquier endpoint que requiera autenticación.
+
+![Swagger UI](docs/swagger-ui.png)
+
 ## Roadmap / pendiente
 
-- [ ] UPDATE y DELETE en `Business`
-- [ ] DELETE de reseñas por parte del cliente
+- [x] UPDATE y DELETE en `Business`
+- [x] DELETE de reseñas por parte del cliente
 - [ ] Tests automatizados (unitarios e integración)
-- [ ] Documentación OpenAPI / Swagger
+- [x] Documentación OpenAPI / Swagger
 - [ ] Configuración de CORS para frontend
 - [ ] Frontend de demostración
 - [ ] Despliegue (Docker + servidor)
