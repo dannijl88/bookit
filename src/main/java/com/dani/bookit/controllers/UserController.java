@@ -3,6 +3,9 @@ package com.dani.bookit.controllers;
 import com.dani.bookit.dto.UserRequestDto;
 import com.dani.bookit.dto.UserResponseDto;
 import com.dani.bookit.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,11 +18,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@Tag(name = "Users", description = "Gestión de usuarios")
 public class UserController {
 
     private final UserService service;
 
     @PostMapping
+    @Operation(summary = "Registrar usuario", description = "Registra un nuevo usuario en el sistema")
+    @ApiResponse(responseCode = "201", description = "Usuario registrado correctamente")
+    @ApiResponse(responseCode = "400", description = "Datos inválidos")
     public ResponseEntity<UserResponseDto> create(@Valid @RequestBody UserRequestDto dto){
         UserResponseDto created = service.register(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);

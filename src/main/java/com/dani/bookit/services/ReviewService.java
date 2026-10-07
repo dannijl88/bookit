@@ -51,4 +51,12 @@ public class ReviewService {
         return repository.findByAppointment_Employee_Business(business, pageable).map(ReviewMapper::toReviewResponse);
     }
 
+    public void delete(Long reviewId, Long userId){
+        Review review = repository.findById(reviewId).orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
+        if(!review.getAppointment().getClient().getId().equals(userId)){
+            throw new AccessDeniedCustomException("You don't have permission");
+        }
+        repository.delete(review);
+    }
+
 }
