@@ -1,7 +1,9 @@
 package com.dani.bookit.dto;
 
+import com.dani.bookit.entities.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,5 +26,7 @@ public class UserRequestDto {
 
     @NotBlank
     private String phone;
+
+    private Role role;
 
 }

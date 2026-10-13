@@ -4,6 +4,7 @@ import com.dani.bookit.dto.UserRequestDto;
 import com.dani.bookit.dto.UserResponseDto;
 import com.dani.bookit.entities.Role;
 import com.dani.bookit.entities.User;
+import com.dani.bookit.exceptions.AccessDeniedCustomException;
 import com.dani.bookit.exceptions.ResourceAlreadyInUseException;
 import com.dani.bookit.mappers.UserMapper;
 import com.dani.bookit.repositories.UserRepository;
@@ -23,10 +24,14 @@ public class UserService {
         if (repository.existsByEmail(dto.getEmail())){
             throw new ResourceAlreadyInUseException("Email already in use");
         }
-        User newUser = UserMapper.toEntity(dto);
+        Role role = dto.getRole() == null ? Role.CLIENT : dto.getRole();
 
+        if (role != Role.CLIENT && role != Role.BUSINESS_OWNER) {
+            throw new AccessDeniedCustomException("Role not allowed for registration");
+        }
+        User newUser = UserMapper.toEntity(dto);
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
-        newUser.setRole(Role.CLIENT);
+        newUser.setRole(role);
 
         repository.save(newUser);
         return UserMapper.toResponseDto(newUser);
