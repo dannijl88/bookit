@@ -4,7 +4,7 @@ Backend de una plataforma SaaS de reservas multi-negocio (tipo Booksy), construi
 
 Proyecto personal construido para practicar y demostrar un nivel de backend más allá de un CRUD básico: seguridad real con JWT y control de acceso por rol/propiedad, un algoritmo de disponibilidad horaria calculado desde cero, caché con invalidación, y notificaciones por email.
 
-> ⚠️ Proyecto en desarrollo activo. El backend está funcionalmente completo en su flujo principal (negocios, empleados, servicios, horarios, disponibilidad, reservas, reseñas); quedan pendientes algunas operaciones de edición/borrado menores, tests automatizados, documentación OpenAPI y el frontend.
+> ⚠️ Proyecto en desarrollo activo. El backend está funcionalmente completo en su flujo principal (negocios, empleados, servicios, horarios, disponibilidad, reservas, reseñas); quedan pendientes tests automatizados y el despliegue.
 
 ---
 
@@ -85,21 +85,24 @@ User (CLIENT / BUSINESS_OWNER)
 
 1. Clona el repositorio.
 2. Crea una base de datos MySQL vacía.
-3. Configura `src/main/resources/application.properties` con tus credenciales de BD y de SMTP (Mailtrap u otro):
+3. Los secretos no viven en el repositorio: se leen de variables de entorno con valores por defecto solo para desarrollo local (`src/main/resources/application.properties`).
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/slotlyfy
-spring.datasource.username=TU_USUARIO
-spring.datasource.password=TU_PASSWORD
-spring.jpa.hibernate.ddl-auto=update
+spring.datasource.url=jdbc:mysql://localhost:3306/bookit
+spring.datasource.username=root
+spring.datasource.password=${DB_PASSWORD}
 
-spring.mail.host=sandbox.smtp.mailtrap.io
-spring.mail.port=2525
-spring.mail.username=TU_USUARIO_MAILTRAP
-spring.mail.password=TU_PASSWORD_MAILTRAP
+jwt.secret=${JWT_SECRET}          # mínimo 32 caracteres (HS256)
+
+spring.mail.host=${MAIL_HOST:sandbox.smtp.mailtrap.io}
+spring.mail.port=${MAIL_PORT:2525}
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
+
+app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 ```
 
-4. Ejecuta la aplicación:
+4. Ejecuta la aplicación (añade `--spring.profiles.active=dev` para ver las consultas SQL):
 
 ```bash
 mvn spring-boot:run
@@ -112,9 +115,11 @@ mvn spring-boot:run
 | Método | Ruta | Descripción | Acceso |
 |---|---|---|---|
 | POST | `/api/users` | Registro de cliente | Público |
-| POST | `/api/auth/login` | Login, devuelve JWT | Público |
+| GET | `/api/users/me` | Perfil del usuario autenticado | Autenticado |
+| POST | `/api/auth/login` | Login, devuelve JWT, `userId` y `role` | Público |
 | POST | `/api/businesses` | Crear negocio | `BUSINESS_OWNER` |
 | GET | `/api/businesses?category=` | Listar negocios por categoría (paginado) | Público |
+| GET | `/api/businesses/mine` | Negocios del propietario autenticado | `BUSINESS_OWNER` |
 | GET | `/api/businesses/{id}/services` | Servicios de un negocio | Público |
 | GET | `/api/businesses/{id}/employees` | Empleados activos de un negocio | Público |
 | GET | `/api/businesses/{id}/reviews` | Reseñas de un negocio (paginado) | Público |
@@ -146,11 +151,11 @@ Los endpoints están agrupados por recurso, con su descripción, parámetros y r
 
 ## Roadmap / pendiente
 
-- [x] UPDATE y DELETE en `Business`
+- [x] UPDATE y activación/desactivación (borrado lógico) en `Business`
 - [x] DELETE de reseñas por parte del cliente
-- [ ] Tests automatizados (unitarios e integración)
 - [x] Documentación OpenAPI / Swagger
-- [ ] Configuración de CORS para frontend
+- [x] Configuración de CORS para frontend
+- [ ] Tests automatizados (unitarios e integración)
 - [ ] Frontend de demostración
 - [ ] Despliegue (Docker + servidor)
 
