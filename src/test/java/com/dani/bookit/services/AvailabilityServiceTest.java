@@ -1,6 +1,7 @@
 package com.dani.bookit.services;
 
 import com.dani.bookit.entities.*;
+import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.repositories.AppointmentRepository;
 import com.dani.bookit.repositories.EmployeeRepository;
 import com.dani.bookit.repositories.EmployeeScheduleRepository;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -124,6 +126,71 @@ public class AvailabilityServiceTest {
 
         assertThat(slots).containsExactly(
                 LocalTime.of(9, 0), LocalTime.of(12, 0), LocalTime.of(13, 0));
+
+    }
+
+    @Test
+    void throws_whenEmployeeIsInactive(){
+
+        Business business = business(1L);
+        Employee employee = employee(business);
+        employee.setActive(false);
+        ServiceOffering serviceOffering = serviceOffering(business, 60);
+        LocalDate date = LocalDate.now().plusDays(1);
+
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+        when(serviceOfferingRepository.findById(1L)).thenReturn(Optional.of(serviceOffering));
+
+        assertThatThrownBy(() -> availabilityService.getAvailableSlots(1L, 1L, date))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Employee is not active");
+
+    }
+
+    @Test
+    void throws_whenServiceOfferingIsInactive(){
+
+        Business business = business(1L);
+        Employee employee = employee(business);
+        ServiceOffering serviceOffering = serviceOffering(business, 60);
+        serviceOffering.setActive(false);
+        LocalDate date = LocalDate.now().plusDays(1);
+
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+        when(serviceOfferingRepository.findById(1L)).thenReturn(Optional.of(serviceOffering));
+
+        assertThatThrownBy(() -> availabilityService.getAvailableSlots(1L, 1L, date))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Service offering is not active");
+
+    }
+
+    @Test
+    void throws_whenBusinessIsInactive(){
+
+        Business business = business(1L);
+        business.setActive(false);
+        Employee employee = employee(business);
+        ServiceOffering serviceOffering = serviceOffering(business, 60);
+        LocalDate date = LocalDate.now().plusDays(1);
+
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+        when(serviceOfferingRepository.findById(1L)).thenReturn(Optional.of(serviceOffering));
+
+        assertThatThrownBy(() -> availabilityService.getAvailableSlots(1L, 1L, date))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Business is not active");
+
+    }
+
+    @Test
+    void throws_whenDateIsInThePast(){
+
+        LocalDate date = LocalDate.now().minusDays(1);
+
+        assertThatThrownBy(() -> availabilityService.getAvailableSlots(1L, 1L, date))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("past date");
 
     }
 
