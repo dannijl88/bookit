@@ -44,7 +44,7 @@ public class AvailabilityServiceTest {
         Business business = business(1L);
         Employee employee = employee(business);
         ServiceOffering serviceOffering = serviceOffering(business, 60);
-        LocalDate date = LocalDate.of(2026, 10, 12);
+        LocalDate date = LocalDate.now().plusDays(1);
 
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
         when(serviceOfferingRepository.findById(1L)).thenReturn(Optional.of(serviceOffering));
@@ -66,7 +66,7 @@ public class AvailabilityServiceTest {
         Business business = business(1L);
         Employee employee = employee(business);
         ServiceOffering serviceOffering = serviceOffering(business, 60);
-        LocalDate date = LocalDate.of(2026, 10, 12);
+        LocalDate date = LocalDate.now().plusDays(1);
         Appointment appointment = appointment(date.atTime(11, 0), Status.PENDING, serviceOffering);
 
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
@@ -89,7 +89,7 @@ public class AvailabilityServiceTest {
         Business business = business(1L);
         Employee employee = employee(business);
         ServiceOffering serviceOffering = serviceOffering(business, 60);
-        LocalDate date = LocalDate.of(2026, 10, 12);
+        LocalDate date = LocalDate.now().plusDays(1);
         Appointment appointment = appointment(date.atTime(11, 0), Status.CANCELLED, serviceOffering);
 
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
@@ -112,7 +112,7 @@ public class AvailabilityServiceTest {
         Business business = business(1L);
         Employee employee = employee(business);
         ServiceOffering serviceOffering = serviceOffering(business, 60);
-        LocalDate date = LocalDate.of(2026, 10, 12);
+        LocalDate date = LocalDate.now().plusDays(1);
         Appointment appointment = appointment(date.atTime(10, 30), Status.PENDING, serviceOffering);
 
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
