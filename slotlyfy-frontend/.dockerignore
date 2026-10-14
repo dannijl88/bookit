@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+*.local
+logs
+*.log
+.vscode
+.idea
+.DS_Store
+
+# La URL de la API se pasa como build-arg; no queremos que el .env local
+# (que apunta a localhost) se cuele en la imagen.
+.env
+.env.*
+!.env.example

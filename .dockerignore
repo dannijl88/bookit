@@ -1,0 +1,16 @@
+# Contexto del backend: sólo lo necesario para compilar el jar.
+target/
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+*.iml
+*.log
+*.md
+
+# El frontend se construye con su propio contexto (slotlyfy-frontend/).
+slotlyfy-frontend/
+
+# Secretos locales: nunca deben entrar en la imagen.
+.env

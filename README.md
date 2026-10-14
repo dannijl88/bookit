@@ -4,7 +4,7 @@ Backend de una plataforma SaaS de reservas multi-negocio (tipo Booksy), construi
 
 Proyecto personal construido para practicar y demostrar un nivel de backend más allá de un CRUD básico: seguridad real con JWT y control de acceso por rol/propiedad, un algoritmo de disponibilidad horaria calculado desde cero, caché con invalidación, y notificaciones por email.
 
-> ⚠️ Proyecto en desarrollo activo. El backend está funcionalmente completo en su flujo principal (negocios, empleados, servicios, horarios, disponibilidad, reservas, reseñas); quedan pendientes tests automatizados y el despliegue.
+> ⚠️ Proyecto en desarrollo activo. El backend está funcionalmente completo en su flujo principal (negocios, empleados, servicios, horarios, disponibilidad, reservas, reseñas), con tests automatizados; queda pendiente el despliegue en un servidor real.
 
 ---
 
@@ -16,6 +16,7 @@ Proyecto personal construido para practicar y demostrar un nivel de backend más
 - [Modelo de datos](#modelo-de-datos)
 - [Seguridad](#seguridad)
 - [Cómo levantarlo en local](#cómo-levantarlo-en-local)
+- [Despliegue con Docker](#despliegue-con-docker)
 - [Endpoints principales](#endpoints-principales)
 - [Roadmap / pendiente](#roadmap--pendiente)
 - [Autor](#autor)
@@ -110,6 +111,26 @@ mvn spring-boot:run
 
 5. La API queda disponible en `http://localhost:8080`.
 
+## Despliegue con Docker
+
+El stack completo (MySQL + backend + frontend servido por Nginx) se levanta con Docker Compose:
+
+```bash
+cp .env.example .env      # ajusta DB_PASSWORD y JWT_SECRET (mínimo 32 caracteres)
+docker compose up --build
+```
+
+- **Frontend:** `http://localhost:5173` (build de Vite servido por Nginx, con fallback de SPA para las rutas de React Router).
+- **API:** `http://localhost:8080` (Swagger en `/swagger-ui.html`).
+- **MySQL:** solo accesible desde la red interna de Compose (sin puerto publicado); los datos persisten en el volumen `mysql-data`.
+
+Detalles de la implementación:
+
+- El backend se construye en una imagen multi-stage (`eclipse-temurin:25-jdk-noble` → `eclipse-temurin:25-jre-noble`) y corre como usuario sin privilegios. Las dependencias de Maven se descargan en una capa que solo se invalida cuando cambia el `pom.xml`.
+- El frontend se compila con `node:22-alpine` y se sirve con `nginx:1.27-alpine`; la URL de la API (`VITE_API_URL`) se incrusta en el bundle en tiempo de build.
+- Los secretos y la configuración se leen de `.env` (`docker-compose.yml` no hardcodea nada). El backend sobrescribe el datasource de `application.properties` vía variables de entorno (`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `DB_PASSWORD`).
+- El backend espera a que MySQL esté sano (`healthcheck` + `depends_on: condition: service_healthy`) antes de arrancar; Hibernate crea el esquema con `ddl-auto=update`.
+
 ## Endpoints principales
 
 | Método | Ruta | Descripción | Acceso |
@@ -157,7 +178,8 @@ Los endpoints están agrupados por recurso, con su descripción, parámetros y r
 - [x] Configuración de CORS para frontend
 - [x] Tests automatizados (unitarios e integración)
 - [x] Frontend de demostración
-- [ ] Despliegue (Docker + servidor)
+- [x] Docker local (Dockerfiles + `docker-compose`)
+- [ ] Despliegue en servidor
 
 Fuera de alcance por ahora: integración de pagos reales — pendiente de decidir si el proyecto evoluciona hacia un lanzamiento real.
 

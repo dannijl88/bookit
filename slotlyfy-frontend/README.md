@@ -47,6 +47,20 @@ VITE_API_URL=http://localhost:8080
 | `npm run verify:contract` | Comprueba el contrato HTTP contra un backend simulado |
 | `npm run verify` | `lint` + las dos verificaciones |
 
+### Docker
+
+El `Dockerfile` construye el bundle con `npm ci` + `npm run build` y lo sirve con
+Nginx (con fallback de SPA para las rutas de React Router). La URL de la API se
+inyecta en build-time con el build-arg `VITE_API_URL`:
+
+```bash
+docker build -t slotlyfy-frontend --build-arg VITE_API_URL=http://localhost:8080 .
+docker run -p 5173:80 slotlyfy-frontend
+```
+
+Normalmente no lo construirás a mano: se levanta junto al backend y MySQL con el
+`docker-compose.yml` de la raíz del repositorio (`docker compose up --build`).
+
 `verify:contract` levanta un servidor que imita las respuestas del backend real y comprueba
 rutas, query params, cuerpos, Page<T> y errores. Usa un puerto propio (8099 por defecto,
 configurable con `CONTRACT_PORT`), de modo que se puede ejecutar con el backend real
