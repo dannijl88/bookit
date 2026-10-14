@@ -39,7 +39,7 @@ const navLinkClasses = ({ isActive }) =>
   }`
 
 export default function Navbar() {
-  const { isAuthenticated, user, role, isOwner, isDemoOwner, logout, setDemoOwnerMode } = useAuth()
+  const { isAuthenticated, user, role, isOwner, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef(null)
@@ -145,47 +145,31 @@ export default function Navbar() {
                     <button
                       type="button"
                       role="menuitem"
-                      onClick={() => {
-                        setDemoOwnerMode(!isDemoOwner)
-                        setUserMenuOpen(false)
-                      }}
+                      onClick={handleLogout}
                       className="flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-50"
                     >
-                      <span className="mt-0.5">
-                        <Toggle on={isDemoOwner} />
+                      <span className="mt-0.5 text-slate-500">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          className="h-5 w-5"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M15 12H3m0 0 3.5-3.5M3 12l3.5 3.5M10 7.5V6A2 2 0 0 1 12 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-1.5"
+                            strokeWidth="1.75"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
                       </span>
                       <span>
                         <span className="block text-sm font-semibold text-slate-800">
-                          Modo propietario
+                          Cerrar sesión
                         </span>
-                        <span className="block text-xs text-slate-500">
-                          Activa el panel de gestión para la demo
-                        </span>
+                        <span className="block text-xs text-slate-500">Hasta la próxima</span>
                       </span>
-                    </button>
-                  </div>
-
-                  <div className="border-t border-slate-100 p-1.5">
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-                      <svg
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                        className="h-4 w-4 text-slate-400"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M8 17H5.5A1.5 1.5 0 0 1 4 15.5v-11A1.5 1.5 0 0 1 5.5 3H8m3.5 4L15 10.5 11.5 14m1-7H15.5A1.5 1.5 0 0 1 17 8.5v3a1.5 1.5 0 0 1-1.5 1.5H12.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      Cerrar sesión
                     </button>
                   </div>
                 </div>
@@ -254,13 +238,6 @@ export default function Navbar() {
                   <p className="truncate text-xs text-slate-500">{user?.email}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="secondary"
-                    size="xs"
-                    onClick={() => setDemoOwnerMode(!isDemoOwner)}
-                  >
-                    {isDemoOwner ? 'Salir de modo propietario' : 'Modo propietario'}
-                  </Button>
                   <Button variant="ghost" size="xs" onClick={handleLogout}>
                     Salir
                   </Button>
@@ -270,30 +247,7 @@ export default function Navbar() {
           </div>
         </div>
       )}
-
-      {isDemoOwner && (
-        <div className="border-t border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-xs font-medium text-amber-800 sm:px-6">
-          Modo demo: el rol <strong>propietario</strong> está simulado en el navegador. El JWT
-          del backend no incluye el rol y el registro siempre crea clientes.
-        </div>
-      )}
     </header>
-  )
-}
-
-function Toggle({ on }) {
-  return (
-    <span
-      className={`flex h-5 w-9 items-center rounded-full p-0.5 transition ${
-        on ? 'bg-brand-600' : 'bg-slate-300'
-      }`}
-    >
-      <span
-        className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-          on ? 'translate-x-4' : ''
-        }`}
-      />
-    </span>
   )
 }
 

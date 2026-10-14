@@ -59,7 +59,13 @@ check('isSlotInPast detecta horas ya pasadas de hoy', () => {
   const futureSlot = `${String(future.getHours()).padStart(2, '0')}:${String(
     future.getMinutes(),
   ).padStart(2, '0')}`
-  assert.equal(isSlotInPast(today, futureSlot), false)
+  // Cerca de medianoche "hoy + 3h" cae en el día siguiente, así que además
+  // comprobamos con una fecha futura fija para que el test no dependa de la hora.
+  const tomorrow = toDateInputValue(new Date(Date.now() + 24 * 60 * 60 * 1000))
+  if (future.getDate() === new Date().getDate()) {
+    assert.equal(isSlotInPast(today, futureSlot), false)
+  }
+  assert.equal(isSlotInPast(tomorrow, '10:00'), false)
   assert.equal(isSlotInPast('2020-01-01', '10:00'), true)
 })
 

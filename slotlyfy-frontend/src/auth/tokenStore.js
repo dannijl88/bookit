@@ -34,7 +34,12 @@ export function clearToken() {
   window.localStorage.removeItem(STORAGE_KEYS.token)
 }
 
-/** Sesión = { token, user, role, isDemoOwner } */
+/**
+ * Sesión = { token, user, role }.
+ *
+ * Persistimos el perfil para pintar la interfaz al instante al recargar; el
+ * AuthContext lo revalida contra GET /api/users/me en segundo plano.
+ */
 export function getSession() {
   return readJSON(STORAGE_KEYS.session, null)
 }
@@ -45,46 +50,4 @@ export function setSession(session) {
 
 export function clearSession() {
   window.localStorage.removeItem(STORAGE_KEYS.session)
-}
-
-/**
- * Caché de perfiles por email.
- *
- * El JWT del backend sólo contiene `sub` (el email) + iat/exp: no lleva rol ni
- * id de usuario, y no existe ningún endpoint "usuario actual" contra el que
- * revalidar. Guardamos aquí lo que devuelve POST /api/users al registrarse
- * para poder reconstruir la identidad al hacer login más tarde.
- */
-export function getProfiles() {
-  return readJSON(STORAGE_KEYS.profiles, {})
-}
-
-export function saveProfile(user) {
-  const profiles = getProfiles()
-  profiles[user.email.toLowerCase()] = user
-  writeJSON(STORAGE_KEYS.profiles, profiles)
-  return user
-}
-
-export function findProfileByEmail(email) {
-  if (!email) return null
-  return getProfiles()[String(email).trim().toLowerCase()] || null
-}
-
-/**
- * Escape para la demo: el backend no ofrece ninguna forma de crear un
- * BUSINESS_OWNER (POST /api/users siempre fuerza el rol CLIENT), así que sin
- * este interruptor el panel de propietario sería inalcanzable desde el front.
- */
-export function getRoleOverride() {
-  return window.localStorage.getItem(STORAGE_KEYS.roleOverride) || null
-}
-
-export function setRoleOverride(role) {
-  if (role) window.localStorage.setItem(STORAGE_KEYS.roleOverride, role)
-  else window.localStorage.removeItem(STORAGE_KEYS.roleOverride)
-}
-
-export function isAuthenticated() {
-  return Boolean(getToken() && getSession())
 }

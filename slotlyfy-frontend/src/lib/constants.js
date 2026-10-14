@@ -11,8 +11,6 @@ export const API_URL = (
 export const STORAGE_KEYS = {
   token: 'slotlyfy.token',
   session: 'slotlyfy.session',
-  profiles: 'slotlyfy.profiles',
-  roleOverride: 'slotlyfy.roleOverride',
   selectedBusiness: 'slotlyfy.selectedBusiness',
 }
 

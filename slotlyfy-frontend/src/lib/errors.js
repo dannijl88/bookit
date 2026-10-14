@@ -1,10 +1,10 @@
 /**
- * El backend devuelve los errores de tres formas distintas:
- *   · Excepciones de negocio (404/409/403 de servicio) -> cuerpo de texto plano.
- *   · Validación de Bean Validation -> objeto JSON de Spring Boot SIN `message`
- *     (no hay handler de MethodArgumentNotValidException), así que no podemos
- *     mostrar el detalle del campo: validamos nosotros en el formulario.
- *   · Sin token / token caducado -> cuerpo vacío (403) o error 500.
+ * Formas de error del backend:
+ *   · Excepciones de negocio y validación -> texto plano con el mensaje ya
+ *     legible (GlobalExceptionHandler lo normaliza).
+ *   · 401 -> credenciales incorrectas en /api/auth/login, o token ausente o
+ *     caducado en el resto de endpoints.
+ *   · 403 -> token válido pero sin permisos para la acción.
  */
 const FRIENDLY_MESSAGES = {
   'slot not available': 'Ese horario acaba de ocuparse. Elige otra hora.',
@@ -43,15 +43,14 @@ export function extractApiError(error, fallback = 'Ha ocurrido un error inespera
 
   const { status, data } = error.response
 
-  if (status === 401) return 'Email o contraseña incorrectos.'
+  if (status === 401) {
+    return String(error.config?.url || '').includes('/api/auth/login')
+      ? 'Email o contraseña incorrectos.'
+      : 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
+  }
   if (status === 403) {
     const fromBody = normalize(typeof data === 'string' ? data : data?.message)
-    if (fromBody) return fromBody
-    // Spring devuelve el mismo 403 vacío en ambos casos: si no había token,
-    // la sesión está caducada; si lo había, faltan permisos.
-    return error.config?.hadToken
-      ? 'No tienes permiso para esta acción.'
-      : 'Tu sesión ha caducado. Vuelve a iniciar sesión.'
+    return fromBody || 'No tienes permiso para esta acción.'
   }
   if (status === 500) return 'Error interno del servidor. Vuelve a intentarlo en unos segundos.'
 

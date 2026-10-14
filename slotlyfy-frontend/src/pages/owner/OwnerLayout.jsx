@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useOwner } from './OwnerContext'
 import { useAuth } from '../../auth/AuthContext'
@@ -12,16 +11,15 @@ const TABS = [
 ]
 
 export default function OwnerLayout() {
-  const { business, businesses, candidates, select, loading, errorMessage, ownerName } = useOwner()
-  const { user, isDemoOwner } = useAuth()
-  const [showAll, setShowAll] = useState(false)
+  const { business, businesses, select, loading, errorMessage } = useOwner()
+  const { user } = useAuth()
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:py-12">
       <header className="mb-6">
-        <p className="text-sm font-semibold text-brand-700">Panel de negocio</p>
-        <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-          Hola{user?.name ? `, ${String(user.name).split(' ')[0]}` : ''}
+        <p className="text-sm font-semibold text-brand-700">Panel de gestión</p>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
+          {business ? business.name : `Hola, ${user?.name?.split(' ')[0] || 'hola'}`}
         </h1>
       </header>
 
@@ -31,17 +29,16 @@ export default function OwnerLayout() {
         </Alert>
       )}
 
-      {/* Selector de negocio */}
+      {/* Selector de negocio: sólo necesario si el propietario tiene varios. */}
       {loading ? (
         <LoadingBlock label="Buscando tu negocio…" className="py-8" />
-      ) : businesses.length > 1 || (businesses.length === 0 && candidates.length > 0) ? (
+      ) : businesses.length > 1 ? (
         <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
           <label className="block text-sm font-semibold text-slate-800" htmlFor="business-select">
             Negocio seleccionado
           </label>
           <p className="mt-1 text-xs text-slate-500">
-            El backend no expone "mis negocios", así que comparamos por el nombre del
-            propietario ({ownerName || 'desconocido'}) en las fichas del catálogo.
+            Gestionas más de un negocio: elige sobre cuál quieres trabajar.
           </p>
           <select
             id="business-select"
@@ -52,22 +49,12 @@ export default function OwnerLayout() {
             <option value="" disabled>
               Selecciona un negocio
             </option>
-            {(showAll ? candidates : businesses).map((item) => (
+            {businesses.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name} · {item.category}
-                {showAll ? ` · (${item.ownerName})` : ''}
               </option>
             ))}
           </select>
-          {businesses.length === 0 && candidates.length > 0 && !showAll && (
-            <button
-              type="button"
-              onClick={() => setShowAll(true)}
-              className="mt-2 text-xs font-semibold text-brand-700 hover:text-brand-800"
-            >
-              No aparece mi negocio: ver todas las fichas del catálogo
-            </button>
-          )}
         </div>
       ) : null}
 
@@ -92,14 +79,6 @@ export default function OwnerLayout() {
           </NavLink>
         ))}
       </nav>
-
-      {isDemoOwner && (
-        <Alert tone="warning" className="mb-6">
-          Estás viendo el panel con el rol propietario simulado en el navegador. Las acciones sí
-          se envían al backend, pero responders con un <strong>403</strong> si tu cuenta real es
-          CLIENT.
-        </Alert>
-      )}
 
       <Outlet context={{ business }} />
 

@@ -65,21 +65,24 @@ const BUSINESS = {
 }
 
 const ROUTES = {
-  'POST /api/auth/login': () => (scenario.login === 'fail' ? [401, ''] : [200, { token: 'jwt.demo' }]),
+  'POST /api/auth/login': () =>
+    scenario.login === 'fail' ? [401, ''] : [200, { token: 'jwt.demo', userId: 42, role: 'CLIENT' }],
+  'GET /api/users/me': () => [200, { id: 42, name: 'Ana', email: 'a@b.com', phone: '600', role: 'CLIENT' }],
   'POST /api/users': () => (scenario.emailTaken ? [409, 'Email already in use'] : [201, { ...BUSINESS, id: 42, role: 'CLIENT' }]),
   'GET /api/businesses': () => [200, page([BUSINESS])],
+  'GET /api/businesses/mine': () => [200, [BUSINESS]],
   'GET /api/businesses/1/services': () => [200, [{ id: 3, name: 'Corte', description: 'Corte unisex', price: 24.5, duration: 45, businessId: 1, businessName: 'Studio Bella', active: true }]],
   'GET /api/businesses/1/employees': () => [200, [{ id: 9, name: 'Lucía', active: true, businessId: 1, businessName: 'Studio Bella' }]],
   'GET /api/businesses/1/reviews': () => [200, page([{ id: 5, rating: 5, comment: 'Genial', appointmentId: 1, serviceName: 'Corte', employeeName: 'Lucía', clientName: 'Ana' }])],
-  // Simula el JwtAuthenticationFilter sin try/catch: un token caducado revienta
-  // con 500 en lugar de un 401 limpio.
-  'GET /api/businesses/999/reviews': () => (scenario.expiredToken ? [500, ''] : [404, 'Business not found with id: 999']),
+  // El JwtAuthenticationFilter captura el token caducado y responde 401 limpio.
+  'GET /api/businesses/999/reviews': () =>
+    scenario.expiredToken ? [401, ''] : [404, 'Business not found with id: 999'],
   'GET /api/businesses/1/appointments': () => (scenario.forbidden ? [403, "You don't have permission"] : [200, page([{ id: 11, appointmentDateTime: '2026-10-15T10:00:00', status: 'PENDING', userId: 42, userName: 'Ana', serviceOfferingId: 3, serviceOfferingName: 'Corte', employeeId: 9, employeeName: 'Lucía' }])]),
   'GET /api/availability': () => [200, ['09:00', '09:30:00', '10:00']],
   'GET /api/schedules/employee/9': () => [200, [{ id: 2, dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '14:00', employeeId: 9, employeeName: 'Lucía' }]],
   'GET /api/appointments/me': () =>
     scenario.noTokenForbidden
-      ? [403, '']
+      ? [401, '']
       : [200, page([{ id: 11, appointmentDateTime: '2026-10-15T10:00:00', status: 'COMPLETED', userId: 42, userName: 'Ana', serviceOfferingId: 3, serviceOfferingName: 'Corte', employeeId: 9, employeeName: 'Lucía' }])],
   'POST /api/appointments': () => (scenario.slotTaken ? [409, 'Slot not available'] : [201, { id: 12, appointmentDateTime: '2026-10-15T09:00:00', status: 'PENDING', userId: 42, userName: 'Ana', serviceOfferingId: 3, serviceOfferingName: 'Corte', employeeId: 9, employeeName: 'Lucía' }]),
   'PATCH /api/appointments/11/cancel': () => [200, { id: 11, status: 'CANCELLED' }],
@@ -163,22 +166,40 @@ const check = async (label, fn) => {
 
 console.log('contrato HTTP\n')
 
-await check('login devuelve sólo el token', async () => {
-  const token = await authApi.login({ email: 'a@b.com', password: 'x' })
-  assert.equal(token, 'jwt.demo')
+await check('login devuelve token, userId y role', async () => {
+  const result = await authApi.login({ email: 'a@b.com', password: 'x' })
+  assert.equal(result.token, 'jwt.demo')
+  assert.equal(result.userId, 42)
+  assert.equal(result.role, 'CLIENT')
   assert.deepEqual(last().body, { email: 'a@b.com', password: 'x' })
   assert.equal(last().auth, null, 'login no debe llevar Authorization')
 })
 
-await check('register envía name/email/password/phone y devuelve el rol', async () => {
+await check('getCurrentUser lee el perfil autenticado', async () => {
+  setToken('jwt.demo')
+  const user = await authApi.getCurrentUser()
+  assert.equal(user.role, 'CLIENT')
+  assert.equal(last().path, '/api/users/me')
+  assert.equal(last().auth, 'Bearer jwt.demo')
+  clearToken()
+})
+
+await check('register envía role y devuelve el usuario creado', async () => {
   const user = await authApi.register({
     name: 'Ana',
     email: 'a@b.com',
     password: 'x',
     phone: '600',
+    role: 'BUSINESS_OWNER',
   })
   assert.equal(user.role, 'CLIENT')
-  assert.deepEqual(Object.keys(last().body).sort(), ['email', 'name', 'password', 'phone'])
+  assert.deepEqual(Object.keys(last().body).sort(), [
+    'email',
+    'name',
+    'password',
+    'phone',
+    'role',
+  ])
 })
 
 await check('el interceptor añade Authorization: Bearer <token>', async () => {
@@ -208,12 +229,14 @@ await check('listAllBusinesses barre las 10 categorías y deduplica', async () =
   assert.equal(result.content.length, 1, 'deduplica el mismo negocio 10 veces')
 })
 
-await check('findMyBusinesses filtra por ownerName', async () => {
-  const { owned, all } = await businessApi.findMyBusinesses('Propietario Demo')
-  assert.equal(owned.length, 1)
-  assert.equal(all.length, 1)
-  const empty = await businessApi.findMyBusinesses('Nadie')
-  assert.equal(empty.owned.length, 0)
+await check('getMyBusinesses lee /api/businesses/mine con Authorization', async () => {
+  setToken('jwt.demo')
+  const mine = await businessApi.getMyBusinesses()
+  assert.equal(last().path, '/api/businesses/mine')
+  assert.equal(last().auth, 'Bearer jwt.demo')
+  assert.equal(mine.length, 1)
+  assert.equal(mine[0].name, 'Studio Bella')
+  clearToken()
 })
 
 await check('getAvailability usa employeeId, serviceOfferingId y date ISO', async () => {
@@ -329,7 +352,15 @@ await check('DELETE de turno acepta 204 sin cuerpo', async () => {
 
 await check('extractApiError traduce los mensajes del backend', () => {
   const plain = (status, data) => ({ response: { status, data } })
-  assert.equal(extractApiError(plain(401, '')), 'Email o contraseña incorrectos.')
+  const withUrl = (status, data, url) => ({ response: { status, data }, config: { url } })
+  assert.equal(
+    extractApiError(withUrl(401, '', '/api/auth/login')),
+    'Email o contraseña incorrectos.',
+  )
+  assert.equal(
+    extractApiError(withUrl(401, '', '/api/users/me')),
+    'Tu sesión ha caducado. Vuelve a iniciar sesión.',
+  )
   assert.equal(
     extractApiError(plain(409, 'Email already in use')),
     'Ya existe una cuenta con ese email.',
@@ -342,10 +373,7 @@ await check('extractApiError traduce los mensajes del backend', () => {
     extractApiError(plain(400, 'Appointment status not completed')),
     'Solo puedes reseñar citas completadas.',
   )
-  assert.equal(
-    extractApiError(plain(403, '')),
-    'Tu sesión ha caducado. Vuelve a iniciar sesión.',
-  )
+  assert.equal(extractApiError(plain(403, '')), 'No tienes permiso para esta acción.')
   assert.match(extractApiError({ request: {} }), /conectar con el servidor/)
   // Sin cuerpo y sin red tampoco debe romperse.
   assert.equal(typeof extractApiError(null), 'string')
@@ -376,17 +404,17 @@ await check('un 403 vacio CON token no expulsa (es falta de permisos)', async ()
   scenario.forbiddenEmpty = false
 })
 
-await check('un 403 vacio SIN token si limpia la sesion', async () => {
+await check('un 401 SIN token limpia la sesión', async () => {
   clearToken()
   setSession({ token: null, user: { id: 1, role: 'CLIENT' }, role: 'CLIENT' })
   scenario.noTokenForbidden = true
   await assert.rejects(() => appointmentApi.getMyAppointments({ page: 0, size: 10 }))
   assert.equal(getToken(), null, 'no habia token')
-  assert.equal(getSession(), null, 'sin token, el 403 vacio significa sesion perdida')
+  assert.equal(getSession(), null, 'un 401 implica sesion perdida')
   scenario.noTokenForbidden = false
 })
 
-await check('un 500 con token sí limpia el token (filtro JWT sin capturar)', async () => {
+await check('un 401 con token caducado limpia el token', async () => {
   const { http } = await import('../src/lib/api.js')
   scenario.expiredToken = true
   setToken('jwt.demo')
@@ -396,7 +424,7 @@ await check('un 500 con token sí limpia el token (filtro JWT sin capturar)', as
   scenario.expiredToken = false
 })
 
-await check('sin token no se intenta limpiar nada', async () => {
+await check('un 401 sin token tampoco rompe', async () => {
   const { http } = await import('../src/lib/api.js')
   scenario.expiredToken = true
   clearToken()

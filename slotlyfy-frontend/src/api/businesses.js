@@ -80,36 +80,10 @@ export async function createBusiness(payload) {
 }
 
 /**
- * Busca los negocios propiedad del usuario actual.
- *
- * El backend tiene `findByOwner` en el repositorio pero NO lo expone por
- * HTTP, así que replicamos el filtro aquí: recogemos negocios de todas las
- * categorías y nos quedamos con los que coinciden con `ownerName`.
- * Si el nombre no coincide (p. ej. el usuario se registró en otro navegador y
- * no tenemos su nombre real), la interfaz deja elegir manualmente.
+ * GET /api/businesses/mine. Sólo BUSINESS_OWNER: el backend resuelve el
+ * propietario desde el token, así que no hace falta filtrar por nombre.
  */
-export async function findMyBusinesses(ownerName) {
-  const results = await Promise.allSettled(
-    CATEGORIES.map((category) =>
-      http.get('/api/businesses', {
-        params: { category: category.value, page: 0, size: FANOUT_PAGE_SIZE },
-      }),
-    ),
-  )
-
-  const merged = []
-  results.forEach((result) => {
-    if (result.status !== 'fulfilled') return
-    const content = result.value?.data?.content
-    if (Array.isArray(content)) merged.push(...content)
-  })
-
-  const all = dedupeAndSort(merged)
-  if (!ownerName) return { all, owned: all }
-
-  const needle = String(ownerName).trim().toLowerCase()
-  const owned = all.filter(
-    (business) => String(business.ownerName || '').trim().toLowerCase() === needle,
-  )
-  return { all, owned }
+export async function getMyBusinesses() {
+  const { data } = await http.get('/api/businesses/mine')
+  return Array.isArray(data) ? data : []
 }

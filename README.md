@@ -76,7 +76,7 @@ User (CLIENT / BUSINESS_OWNER)
 
 ## Seguridad
 
-- Autenticación mediante JWT (login devuelve un token con el rol del usuario embebido).
+- Autenticación mediante JWT: el login devuelve `{ token, userId, role }`; el token sólo lleva el email (`sub`) y la caducidad, y el perfil se recupera con `GET /api/users/me`.
 - Autorización por rol con `@PreAuthorize` en los endpoints que lo requieren.
 - Autorización por propiedad (*ownership*) a nivel de service: un `BUSINESS_OWNER` solo puede gestionar recursos de negocios que le pertenecen a él; un `CLIENT` solo puede ver/cancelar sus propias citas.
 - Endpoints de lectura pública (listado de negocios, servicios, empleados, reseñas y disponibilidad) no requieren autenticación, ya que cualquier visitante debe poder explorar el catálogo antes de registrarse.
@@ -155,8 +155,8 @@ Los endpoints están agrupados por recurso, con su descripción, parámetros y r
 - [x] DELETE de reseñas por parte del cliente
 - [x] Documentación OpenAPI / Swagger
 - [x] Configuración de CORS para frontend
-- [ ] Tests automatizados (unitarios e integración)
-- [ ] Frontend de demostración
+- [x] Tests automatizados (unitarios e integración)
+- [x] Frontend de demostración
 - [ ] Despliegue (Docker + servidor)
 
 Fuera de alcance por ahora: integración de pagos reales — pendiente de decidir si el proyecto evoluciona hacia un lanzamiento real.

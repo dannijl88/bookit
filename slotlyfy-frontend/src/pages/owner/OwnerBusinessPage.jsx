@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { businessApi } from '../../api'
+import { useAuth } from '../../auth/AuthContext'
 import { useOwner } from './OwnerContext'
 import { useToast } from '../../hooks/useToast'
 import { extractApiError } from '../../lib/errors'
@@ -16,15 +17,16 @@ const EMPTY = { name: '', address: '', phone: '', category: '', openingHours: ''
  * Alta y resumen de la ficha del negocio.
  *
  * POST /api/businesses sólo admite BUSINESS_OWNER (el owner se toma del token,
- * nunca del body) y el backend no ofrece ningún endpoint de actualización de
- * negocio, así que una vez creada la ficha es de sólo lectura aquí.
+ * nunca del body). El backend ya expone PATCH /api/businesses/{id}, pero la
+ * interfaz todavía no ofrece edición: aquí la ficha es de sólo lectura una vez
+ * creada.
  */
 export default function OwnerBusinessPage() {
-  const { business, reload, ownerName } = useOwner()
+  const { business, reload } = useOwner()
 
   if (business) return <BusinessSummary business={business} />
 
-  return <CreateBusinessForm onCreated={reload} ownerName={ownerName} />
+  return <CreateBusinessForm onCreated={reload} />
 }
 
 function BusinessSummary({ business }) {
@@ -78,8 +80,9 @@ function Detail({ label, value }) {
   )
 }
 
-function CreateBusinessForm({ onCreated, ownerName }) {
+function CreateBusinessForm({ onCreated }) {
   const toast = useToast()
+  const { user } = useAuth()
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -202,8 +205,8 @@ function CreateBusinessForm({ onCreated, ownerName }) {
         <Alert tone="info" title="Cómo encaja con el backend">
           <ul className="mt-1 list-disc space-y-1.5 pl-4">
             <li>El propietario se toma del token: no se puede suplantar.</li>
-            <li>Sin endpoint de alta de propietarios, el registro siempre crea CLIENT.</li>
-            <li>No hay actualización de negocio: los datos son de sólo lectura.</li>
+            <li>La cuenta debe tener el rol de propietario para crear la ficha.</li>
+            <li>El backend expone un PATCH, pero esta pantalla no edita todavía.</li>
           </ul>
         </Alert>
 
@@ -223,9 +226,9 @@ function CreateBusinessForm({ onCreated, ownerName }) {
               </li>
             ))}
           </ol>
-          {ownerName && (
+          {user?.name && (
             <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
-              Tu ficha quedará asociada a <strong>{ownerName}</strong>.
+              Tu ficha quedará asociada a <strong>{user.name}</strong>.
             </p>
           )}
         </Card>

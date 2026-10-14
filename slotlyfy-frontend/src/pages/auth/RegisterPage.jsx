@@ -2,14 +2,22 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { extractApiError } from '../../lib/errors'
+import { ROLES } from '../../lib/domain'
 import Button from '../../components/ui/Button'
-import { Input } from '../../components/ui/FormControls'
+import { Input, Select } from '../../components/ui/FormControls'
 import { Alert } from '../../components/ui/Feedback'
 import { AuthAside } from './AuthAside'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-const EMPTY = { name: '', email: '', phone: '', password: '', confirmPassword: '' }
+const EMPTY = {
+  name: '',
+  email: '',
+  phone: '',
+  password: '',
+  confirmPassword: '',
+  role: ROLES.CLIENT,
+}
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -21,9 +29,8 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
 
   /**
-   * El backend no devuelve los mensajes de Bean Validation (no hay handler de
-   * MethodArgumentNotValidException y `server.error.include-message=never`),
-   * así que toda la validación útil tiene que ocurrir aquí.
+   * El backend valida con Bean Validation, pero replicamos las reglas aquí para
+   * dar feedback inmediato sin esperar al servidor.
    */
   const validate = () => {
     const next = {}
@@ -45,13 +52,15 @@ export default function RegisterPage() {
 
     setSubmitting(true)
     try {
-      await register({
+      const session = await register({
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
         password: form.password,
+        role: form.role,
       })
-      navigate('/businesses', { replace: true })
+      const landing = session?.role === ROLES.BUSINESS_OWNER ? '/panel' : '/businesses'
+      navigate(landing, { replace: true })
     } catch (error) {
       setFormError(extractApiError(error, 'No hemos podido crear tu cuenta.'))
     } finally {
@@ -109,6 +118,17 @@ export default function RegisterPage() {
           required
         />
 
+        <Select
+          label="¿Cómo vas a usar Slotlyfy?"
+          name="role"
+          value={form.role}
+          onChange={update('role')}
+          hint="Como propietario podrás publicar tu negocio y gestionar tus citas."
+        >
+          <option value={ROLES.CLIENT}>Soy cliente: quiero reservar</option>
+          <option value={ROLES.BUSINESS_OWNER}>Soy propietario: quiero gestionar mi negocio</option>
+        </Select>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
             label="Contraseña"
@@ -135,9 +155,8 @@ export default function RegisterPage() {
         </div>
 
         <p className="text-xs text-slate-500">
-          Al crear la cuenta se registra como <strong className="font-semibold">cliente</strong>.
-          Si además gestionas un negocio, activa el modo propietario desde tu menú para ver el
-          panel de gestión.
+          Con una cuenta de cliente podrás reservar en cualquier negocio; con una de propietario
+          accederás al panel para publicar tu ficha, tus servicios y tu equipo.
         </p>
 
         <Button type="submit" size="lg" full loading={submitting}>

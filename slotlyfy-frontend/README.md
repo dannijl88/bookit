@@ -63,7 +63,7 @@ src/
 │   ├── owner.js        #   empleados, horarios, servicios del propietario
 │   └── reviews.js
 ├── auth/
-│   ├── tokenStore.js   # localStorage: token, sesión, perfiles cacheados
+│   ├── tokenStore.js   # localStorage: token y sesión (token + usuario + rol)
 │   └── AuthContext.jsx # login / register / logout / rol en React
 ├── components/
 │   ├── layout/         # Layout, Navbar, Footer
@@ -103,30 +103,19 @@ src/
 
 ## Autenticación
 
-`POST /api/auth/login` devuelve **únicamente `{ token }`**. El interceptor de
-`lib/api.js` añade `Authorization: Bearer <token>` a todas las peticiones y, en la
-sesión persistente, guarda token + usuario + rol.
+`POST /api/auth/login` devuelve `{ token, userId, role }`. El interceptor de `lib/api.js`
+añade `Authorization: Bearer <token>` a todas las peticiones, y la sesión (token + usuario +
+rol) se persiste en `localStorage` para pintar la interfaz al instante al recargar.
 
-### El rol no viene en el JWT
+### Perfil y rol
 
-El token del backend sólo contiene `sub` (el email), `iat` y `exp`: **no lleva rol**, y
-tampoco existe un endpoint de "usuario actual" contra el que recuperarlo al recargar la
-página. Además, `POST /api/users` **siempre** crea un `CLIENT`, así que por API no hay
-forma de convertirse en propietario.
+El perfil completo se recupera con `GET /api/users/me`, que incluye el `role` real. Al
+cargar la app, si hay token, el `AuthContext` revalida la sesión guardada contra ese
+endpoint; si el token ya no vale, el interceptor limpia la sesión.
 
-Cómo lo resuelve este frontend:
-
-1. Al registrarse, la respuesta de `POST /api/users` **sí** trae `role`, así que se
-   cachea un perfil por email en `localStorage` (`slotlyfy.profiles`).
-2. Al hacer login se recupera ese perfil por email y se reconstruye la sesión con su rol.
-   Si no hay perfil cacheado (te registraste en otro navegador), se asume `CLIENT`.
-3. El menú de usuario tiene **"Modo propietario"**, que fuerza el rol en el navegador
-   para poder enseñar el panel en una demo. Cuando está activo se muestra un aviso
-   amarillo en la cabecera. **No es una autorización**: es sólo una llave de interfaz, y
-   las peticiones que hagas seguirán saliendo con tu rol real.
-
-Si prefieres el comportamiento estricto, quita el interruptor en `Navbar.jsx`; el guard
-de rutas seguirá funcionando con el rol del perfil cacheado.
+En el registro (`POST /api/users`) el usuario elige explícitamente su rol: `CLIENT` (para
+reservar) o `BUSINESS_OWNER` (para publicar y gestionar un negocio). El backend rechaza
+cualquier otro valor.
 
 ## Decisiones marcadas por el backend
 
@@ -137,16 +126,16 @@ Lo siguiente no son preferencias de diseño: son huecos del API que condicionan 
 | `GET /api/businesses` exige `category` (sin valor por defecto → 400 si se omite) y sólo acepta coincidencia exacta ignorando mayúsculas | "Todos" pide la primera página de **las 10 categorías en paralelo** y pagina en cliente sobre la unión deduplicada. Con filtro, la paginación es la real del servidor. |
 | `category` es texto libre: no hay enum ni endpoint que las liste | `lib/domain.js` define las 10 categorías y es la **única fuente de verdad**: alimenta el filtro de clientes y el selector del alta de negocio, así que los valores siempre cuadran. |
 | No hay `GET /api/businesses/{id}` | La ficha se recupera del catálogo en memoria. |
-| No hay "mis negocios" (`findByOwner` existe pero no se expone) | `findMyBusinesses` barre el catálogo y compara por `ownerName`. Si no encuentra nada, el panel ofrece un selector manual. |
-| Sin token **403** con cuerpo vacío (no 401), token caducado **500** porque el filtro JWT no captura la excepción, y **el mismo 403 vacío** cuando el token es válido pero faltan permisos | El interceptor sólo da la sesión por perdida si **no** enviamos token (o si llega 401/500), y distingue los casos con la marca `hadToken`. Así un 403 por permisos muestra "No tienes permiso para esta acción" **sin** expulsar al usuario, que es lo que ocurre al usar el panel en modo demo. |
-| No se devuelven los mensajes de Bean Validation (sin handler y `include-message=never`) | Todos los formularios validan en cliente: precio ≥ 0,10, duración ≥ 30 min, rating 1-5, fecha futura, email… |
+| "Mis negocios" expuesto como `GET /api/businesses/mine` (sólo `BUSINESS_OWNER`) | `OwnerContext` lo llama al entrar al panel; si el propietario tiene varios negocios, se elige con un selector y se recuerda el último en `localStorage`. |
+| Sesión no válida responde **401** (falta el token o ha caducado) y los **403** son falta de permisos | El interceptor cierra la sesión sólo ante un **401** (salvo en `POST /api/auth/login`, cuyas credenciales erróneas también son 401). Un **403** muestra "No tienes permiso para esta acción" **sin** expulsar al usuario. |
+| Los errores de validación y de negocio llegan con un mensaje legible | Los formularios validan igualmente en cliente para dar feedback inmediato: precio ≥ 0,10, duración ≥ 30 min, rating 1-5, fecha futura, email… |
 | Los errores de negocio llegan en inglés y en texto plano | `lib/errors.js` los traduce a español y añade mensajes para red caída, 403 y 500. |
 | `LocalTime` llega como `"09:00"` (sin segundos) y `LocalDateTime` los exige | `normalizeSlot` / `buildAppointmentDateTime` completan los segundos antes de enviar la cita. |
 | `GET /api/businesses/{id}/services` y `/employees` sólo devuelven lo activo | Un servicio desactivado deja de listarse; el panel lo avisa. |
-| `PATCH /api/services/{id}` ignora el campo `name` | No hay edición de servicios en la UI, sólo alta y activar/desactivar. |
+| `PATCH /api/services/{id}` permite editar, pero la UI aún no ofrece edición | Sólo alta y activar/desactivar servicios desde el panel. |
 | No hay filtro por estado en los listados paginados | Los chips de estado filtran la página cargada, y así se indica en la interfaz. |
-| No hay actualización ni borrado de negocio | La ficha es de sólo lectura una vez creada. |
-| `GET /api/businesses/{id}/appointments` también exige rol de propietario | Con una cuenta CLIENT la pestaña Citas del panel recibe 403 y lo avisa con un mensaje; sólo se puede listar con una cuenta real de propietario. |
+| El negocio se puede actualizar y (des)activar por API (`PATCH /api/businesses/{id}`, `/activate`, `/deactivate`), pero la UI aún no los usa | La ficha es de sólo lectura una vez creada. |
+| `GET /api/businesses/{id}/appointments` también exige rol de propietario | Con una cuenta CLIENT la pestaña Citas del panel recibe un 403 y lo avisa con un mensaje; sólo se puede listar con una cuenta real de propietario. |
 | El puerto 5173 es obligatorio | `CorsConfig` sólo permite el origen `http://localhost:5173`. Con cualquier otro puerto el preflight devuelve 403 y *ninguna* llamada llega al backend, así que `strictPort` está activado para que Vite falle en vez de moverse de puerto. |
 
 ## Diseño
