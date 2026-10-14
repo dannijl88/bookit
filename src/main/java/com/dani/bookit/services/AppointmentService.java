@@ -6,6 +6,7 @@ import com.dani.bookit.dto.UpdateStatusDto;
 import com.dani.bookit.entities.*;
 import com.dani.bookit.events.EmailNotificationEvent;
 import com.dani.bookit.exceptions.AccessDeniedCustomException;
+import com.dani.bookit.exceptions.InvalidAppointmentStatusException;
 import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.exceptions.ScheduleOverlapException;
 import com.dani.bookit.mappers.AppointmentMapper;
@@ -20,7 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +38,13 @@ public class AppointmentService {
     private final BusinessRepository businessRepository;
     private final ApplicationEventPublisher eventPublisher;
 
+    private static final Map<Status, Set<Status>> ALLOWED_TRANSITIONS = Map.of(
+            Status.PENDING, EnumSet.of(Status.CONFIRMED, Status.CANCELLED),
+            Status.CONFIRMED, EnumSet.of(Status.COMPLETED, Status.CANCELLED),
+            Status.COMPLETED, EnumSet.noneOf(Status.class),
+            Status.CANCELLED, EnumSet.noneOf(Status.class)
+    );
+
     @Transactional
     @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto create(AppointmentRequestDto dto, Long userId){
@@ -43,6 +54,15 @@ public class AppointmentService {
                 new ResourceNotFoundException("Service offering not found with id:" + dto.getServiceId()));
         Employee employee = employeeRepository.findByIdForUpdate(dto.getEmployeeId()).orElseThrow(() ->
                 new ResourceNotFoundException("Employee not found with id:" + dto.getEmployeeId()));
+        if(!Boolean.TRUE.equals(employee.getActive())){
+            throw new ResourceNotFoundException("Employee is not active with id: " + dto.getEmployeeId());
+        }
+        if(!Boolean.TRUE.equals(serviceOffering.getActive())){
+            throw new ResourceNotFoundException("Service offering is not active with id: " + dto.getServiceId());
+        }
+        if(!Boolean.TRUE.equals(employee.getBusiness().getActive())){
+            throw new ResourceNotFoundException("Business is not active with id: " + employee.getBusiness().getId());
+        }
         List<LocalTime> availableSlots = availabilityService.getAvailableSlots(dto.getEmployeeId(), dto.getServiceId(), dto.getAppointmentDateTime().toLocalDate());
         if(!availableSlots.contains(dto.getAppointmentDateTime().toLocalTime())){
             throw new ScheduleOverlapException("Slot not available");
@@ -62,6 +82,12 @@ public class AppointmentService {
                 new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
         if (!appointment.getEmployee().getBusiness().getOwner().getId().equals(userId)){
             throw new AccessDeniedCustomException("You don't have permission");
+        }
+        Status currentStatus = appointment.getStatus();
+        if (currentStatus != dto.getStatus()
+                && !ALLOWED_TRANSITIONS.getOrDefault(currentStatus, Set.of()).contains(dto.getStatus())) {
+            throw new InvalidAppointmentStatusException(
+                    "Invalid status transition from " + currentStatus + " to " + dto.getStatus());
         }
         appointment.setStatus(dto.getStatus());
         repository.save(appointment);
@@ -85,6 +111,9 @@ public class AppointmentService {
                 new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
         if(!appointment.getClient().getId().equals(userId)){
             throw new AccessDeniedCustomException("You don't have permission");
+        }
+        if(appointment.getStatus() == Status.COMPLETED){
+            throw new InvalidAppointmentStatusException("Completed appointments cannot be cancelled");
         }
         appointment.setStatus(Status.CANCELLED);
         repository.save(appointment);

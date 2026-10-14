@@ -1,7 +1,6 @@
 package com.dani.bookit.dto;
 
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,5 +22,10 @@ public class EmployeeScheduleRequestDto {
     private LocalTime startTime;
     @NotNull
     private LocalTime endTime;
+
+    @AssertTrue(message = "endTime must be after startTime")
+    public boolean isTimeRangeValid(){
+        return startTime == null || endTime == null || endTime.isAfter(startTime);
+    }
 
 }

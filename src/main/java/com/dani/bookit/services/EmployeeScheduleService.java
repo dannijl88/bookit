@@ -63,6 +63,15 @@ public class EmployeeScheduleService {
         if(!schedule.getEmployee().getBusiness().getOwner().getId().equals(userId)){
             throw new AccessDeniedCustomException("You don't have permission");
         }
+
+        List<EmployeeSchedule> schedules = repository.findByEmployeeAndDayOfWeek(schedule.getEmployee(), dto.getDayOfWeek());
+        boolean overlaps = schedules.stream()
+                .filter(s -> !s.getId().equals(scheduleId))
+                .anyMatch(s -> dto.getStartTime().isBefore(s.getEndTime()) && s.getStartTime().isBefore(dto.getEndTime()));
+        if(overlaps){
+            throw new ScheduleOverlapException("This schedule overlaps with existing schedule");
+        }
+
         schedule.setDayOfWeek(dto.getDayOfWeek());
         schedule.setStartTime(dto.getStartTime());
         schedule.setEndTime(dto.getEndTime());

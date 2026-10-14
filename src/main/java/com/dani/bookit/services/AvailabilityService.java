@@ -28,10 +28,24 @@ public class AvailabilityService {
     @Transactional(readOnly = true)
     public List<LocalTime> getAvailableSlots(Long employeeId, Long serviceOfferingId, LocalDate date){
 
+        if(date.isBefore(LocalDate.now())){
+            throw new ResourceNotFoundException("Cannot check availability for a past date: " + date);
+        }
+
         Employee employee = employeeRepository.findById(employeeId).orElseThrow(() ->
                 new ResourceNotFoundException("Employee not found with id: " + employeeId));
         ServiceOffering serviceOffering = serviceOfferingRepository.findById(serviceOfferingId).orElseThrow(() ->
                 new ResourceNotFoundException("Service offering not found with id: " + serviceOfferingId));
+
+        if(!Boolean.TRUE.equals(employee.getActive())){
+            throw new ResourceNotFoundException("Employee is not active with id: " + employeeId);
+        }
+        if(!Boolean.TRUE.equals(serviceOffering.getActive())){
+            throw new ResourceNotFoundException("Service offering is not active with id: " + serviceOfferingId);
+        }
+        if(!Boolean.TRUE.equals(employee.getBusiness().getActive())){
+            throw new ResourceNotFoundException("Business is not active with id: " + employee.getBusiness().getId());
+        }
 
         if(!serviceOffering.getBusiness().getId().equals(employee.getBusiness().getId())){
             throw new ResourceNotFoundException("The service does not belong to the same business as the employee");

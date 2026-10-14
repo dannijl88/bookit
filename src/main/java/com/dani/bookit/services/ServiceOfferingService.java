@@ -53,6 +53,7 @@ public class ServiceOfferingService {
         if(!serviceOffering.getBusiness().getOwner().getId().equals(userId)){
             throw new AccessDeniedCustomException("You don't have permission");
         }
+        serviceOffering.setName(dto.getName());
         serviceOffering.setDescription(dto.getDescription());
         serviceOffering.setDuration(dto.getDuration());
         serviceOffering.setPrice(dto.getPrice());
