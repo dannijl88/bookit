@@ -19,6 +19,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -31,6 +32,7 @@ public class BusinessService {
     private final EmployeeRepository employeeRepository;
     private final ServiceOfferingRepository serviceOfferingRepository;
 
+    @Transactional
     @CacheEvict(value = "businesses", allEntries = true)
      public BusinessResponseDto create(BusinessRequestDto dto, Long ownerId){
 
@@ -41,11 +43,13 @@ public class BusinessService {
          return BusinessMapper.toResponseDto(newBusiness);
      }
 
+    @Transactional(readOnly = true)
      @Cacheable(value = "businesses", key = "#category + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
      public Page<BusinessResponseDto> findByCategory(String category, Pageable pageable){
          return repository.findByCategoryIgnoreCaseAndActiveTrue(category, pageable).map(BusinessMapper::toResponseDto);
      }
 
+    @Transactional
     @CacheEvict(value = "businesses", allEntries = true)
      public BusinessResponseDto update(BusinessRequestDto dto, Long businessId, Long userId){
 
@@ -62,6 +66,7 @@ public class BusinessService {
         return BusinessMapper.toResponseDto(business);
 
      }
+    @Transactional
     @CacheEvict(value = "businesses", allEntries = true)
      public BusinessResponseDto activate(Long businessId, Long userId){
 
@@ -75,6 +80,7 @@ public class BusinessService {
 
      }
 
+    @Transactional
     @CacheEvict(value = "businesses", allEntries = true)
     public BusinessResponseDto deactivate(Long businessId, Long userId){
 

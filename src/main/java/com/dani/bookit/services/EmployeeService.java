@@ -11,6 +11,7 @@ import com.dani.bookit.repositories.BusinessRepository;
 import com.dani.bookit.repositories.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class EmployeeService {
     private final EmployeeRepository repository;
     private final BusinessRepository businessRepository;
 
+    @Transactional
     public EmployeeResponseDto create(EmployeeRequestDto employeeRequestDto, Long businessId, Long userId){
         Business business = businessRepository.findById(businessId).orElseThrow(() ->
                 new ResourceNotFoundException("Business not found with id:" + businessId));
@@ -32,12 +34,14 @@ public class EmployeeService {
         return EmployeeMapper.toEmployeeResponse(newEmployee);
     }
 
+    @Transactional(readOnly = true)
     public List<EmployeeResponseDto> findByBusiness(Long businessId){
         Business business = businessRepository.findById(businessId).orElseThrow(() ->
                 new ResourceNotFoundException("Business not found with id:" + businessId));
         return repository.findByBusinessAndActiveTrue(business).stream().map(EmployeeMapper::toEmployeeResponse).toList();
     }
 
+    @Transactional
     public EmployeeResponseDto update(Long employeeId, Long userId, EmployeeRequestDto dto){
 
         Employee employee = repository.findById(employeeId).orElseThrow(() ->
@@ -50,6 +54,7 @@ public class EmployeeService {
         return EmployeeMapper.toEmployeeResponse(employee);
     }
 
+    @Transactional
     public EmployeeResponseDto activate(Long employeeId, Long userId){
         Employee employee = repository.findById(employeeId).orElseThrow(() ->
                 new ResourceNotFoundException("Employee not found with id: " + employeeId));
@@ -61,6 +66,7 @@ public class EmployeeService {
         return EmployeeMapper.toEmployeeResponse(employee);
     }
 
+    @Transactional
     public EmployeeResponseDto deactivate(Long employeeId, Long userId){
         Employee employee = repository.findById(employeeId).orElseThrow(() ->
                 new ResourceNotFoundException("Employee not found with id: " + employeeId));

@@ -8,6 +8,7 @@ import com.dani.bookit.repositories.EmployeeScheduleRepository;
 import com.dani.bookit.repositories.ServiceOfferingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ public class AvailabilityService {
     private final EmployeeScheduleRepository scheduleRepository;
     private final AppointmentRepository appointmentRepository;
 
+    @Transactional(readOnly = true)
     public List<LocalTime> getAvailableSlots(Long employeeId, Long serviceOfferingId, LocalDate date){
 
         Employee employee = employeeRepository.findById(employeeId).orElseThrow(() ->

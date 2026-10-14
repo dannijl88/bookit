@@ -11,6 +11,7 @@ import com.dani.bookit.repositories.BusinessRepository;
 import com.dani.bookit.repositories.ServiceOfferingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class ServiceOfferingService {
     private final ServiceOfferingRepository repository;
     private final BusinessRepository businessRepository;
 
+    @Transactional
     public ServiceOfferingResponseDto create(ServiceOfferingRequestDto dto, Long businessId, Long userId){
 
         Business business = businessRepository.findById(businessId).orElseThrow(() ->
@@ -34,6 +36,7 @@ public class ServiceOfferingService {
 
     }
 
+    @Transactional(readOnly = true)
     public List<ServiceOfferingResponseDto> findByBusiness(Long businessId){
 
         Business business = businessRepository.findById(businessId).orElseThrow(() ->
@@ -42,6 +45,7 @@ public class ServiceOfferingService {
 
     }
 
+    @Transactional
     public ServiceOfferingResponseDto update(ServiceOfferingRequestDto dto, Long serviceOfferingId, Long userId){
 
         ServiceOffering serviceOffering = repository.findById(serviceOfferingId).orElseThrow(() ->
@@ -56,6 +60,7 @@ public class ServiceOfferingService {
         return ServiceOfferingMapper.toServiceResponse(serviceOffering);
     }
 
+    @Transactional
     public ServiceOfferingResponseDto activate(Long serviceOfferingId, Long userId){
         ServiceOffering serviceOffering = repository.findById(serviceOfferingId).orElseThrow(() ->
                 new ResourceNotFoundException("Service not found with id: " + serviceOfferingId));
@@ -67,6 +72,7 @@ public class ServiceOfferingService {
         return ServiceOfferingMapper.toServiceResponse(serviceOffering);
     }
 
+    @Transactional
     public ServiceOfferingResponseDto deactivate(Long serviceOfferingId, Long userId){
         ServiceOffering serviceOffering = repository.findById(serviceOfferingId).orElseThrow(() ->
                 new ResourceNotFoundException("Service not found with id: " + serviceOfferingId));

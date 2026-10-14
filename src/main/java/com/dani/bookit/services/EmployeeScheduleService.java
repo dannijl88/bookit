@@ -12,6 +12,7 @@ import com.dani.bookit.repositories.EmployeeRepository;
 import com.dani.bookit.repositories.EmployeeScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,6 +23,7 @@ public class EmployeeScheduleService {
     private final EmployeeScheduleRepository repository;
     private final EmployeeRepository employeeRepository;
 
+    @Transactional
     public EmployeeScheduleResponseDto create(EmployeeScheduleRequestDto dto, Long employeeId, Long userId){
 
         Employee employee = employeeRepository.findById(employeeId).orElseThrow(() -> new
@@ -45,6 +47,7 @@ public class EmployeeScheduleService {
 
     }
 
+    @Transactional(readOnly = true)
     public List<EmployeeScheduleResponseDto> findByEmployee(Long employeeId){
         Employee employee = employeeRepository.findById(employeeId).orElseThrow(() ->
                 new ResourceNotFoundException("Employee not found with id: " + employeeId));
@@ -53,6 +56,7 @@ public class EmployeeScheduleService {
                 .toList();
     }
 
+    @Transactional
     public EmployeeScheduleResponseDto update(Long scheduleId, EmployeeScheduleRequestDto dto, Long userId){
         EmployeeSchedule schedule = repository.findById(scheduleId).orElseThrow(() ->
                 new ResourceNotFoundException("Schedule not found with id: " + scheduleId));
@@ -66,6 +70,7 @@ public class EmployeeScheduleService {
         return EmployeeScheduleMapper.toResponseDto(schedule);
     }
 
+    @Transactional
     public void delete(Long scheduleId, Long userId){
         EmployeeSchedule schedule = repository.findById(scheduleId).orElseThrow(() ->
                 new ResourceNotFoundException("Schedule not found with id: " + scheduleId));

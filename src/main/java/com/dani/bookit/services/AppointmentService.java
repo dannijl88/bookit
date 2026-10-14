@@ -4,6 +4,7 @@ import com.dani.bookit.dto.AppointmentRequestDto;
 import com.dani.bookit.dto.AppointmentResponseDto;
 import com.dani.bookit.dto.UpdateStatusDto;
 import com.dani.bookit.entities.*;
+import com.dani.bookit.events.EmailNotificationEvent;
 import com.dani.bookit.exceptions.AccessDeniedCustomException;
 import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.exceptions.ScheduleOverlapException;
@@ -12,11 +13,12 @@ import com.dani.bookit.repositories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -30,15 +32,16 @@ public class AppointmentService {
     private final EmployeeRepository employeeRepository;
     private final AvailabilityService availabilityService;
     private final BusinessRepository businessRepository;
-    private final EmailService emailService;
+    private final ApplicationEventPublisher eventPublisher;
 
+    @Transactional
     @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto create(AppointmentRequestDto dto, Long userId){
 
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found with id:" + userId));
         ServiceOffering serviceOffering = serviceOfferingRepository.findById(dto.getServiceId()).orElseThrow(() ->
                 new ResourceNotFoundException("Service offering not found with id:" + dto.getServiceId()));
-        Employee employee = employeeRepository.findById(dto.getEmployeeId()).orElseThrow(() ->
+        Employee employee = employeeRepository.findByIdForUpdate(dto.getEmployeeId()).orElseThrow(() ->
                 new ResourceNotFoundException("Employee not found with id:" + dto.getEmployeeId()));
         List<LocalTime> availableSlots = availabilityService.getAvailableSlots(dto.getEmployeeId(), dto.getServiceId(), dto.getAppointmentDateTime().toLocalDate());
         if(!availableSlots.contains(dto.getAppointmentDateTime().toLocalTime())){
@@ -47,15 +50,12 @@ public class AppointmentService {
         Appointment newAppointment = AppointmentMapper.toEntity(dto, serviceOffering, employee, user);
         newAppointment.setStatus(Status.PENDING);
         repository.save(newAppointment);
-        try {
-            emailService.sendEmail(user.getEmail(), "Cita creada", "Tu cita ha sido creada para el " + dto.getAppointmentDateTime());
-        } catch (Exception e) {
-            System.out.println("Error enviando email: " + e.getMessage());
-        }
+        publishAppointmentEmail(user.getEmail(), "Cita creada", "Tu cita ha sido creada para el " + dto.getAppointmentDateTime());
         return AppointmentMapper.toDto(newAppointment);
 
     }
 
+    @Transactional
     @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto updateStatus(Long appointmentId, UpdateStatusDto dto, Long userId){
         Appointment appointment = repository.findById(appointmentId).orElseThrow(() ->
@@ -65,21 +65,19 @@ public class AppointmentService {
         }
         appointment.setStatus(dto.getStatus());
         repository.save(appointment);
-        try {
-            emailService.sendEmail(appointment.getClient().getEmail(), "Estado de la cita actualizado", "Tu cita ha sido " + dto.getStatus());
-        } catch (Exception e) {
-            System.out.println("Error enviando email: " + e.getMessage());
-        }
+        publishAppointmentEmail(appointment.getClient().getEmail(), "Estado de la cita actualizado", "Tu cita ha sido " + dto.getStatus());
         return AppointmentMapper.toDto(appointment);
 
     }
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "appointments", key = "#userId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<AppointmentResponseDto> findByClient(Long userId, Pageable pageable){
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         return repository.findByClient(user, pageable).map(AppointmentMapper::toDto);
     }
 
+    @Transactional
     @CacheEvict(value = "appointments", allEntries = true)
     public AppointmentResponseDto cancel(Long appointmentId, Long userId){
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found with id:" + userId));
@@ -90,15 +88,12 @@ public class AppointmentService {
         }
         appointment.setStatus(Status.CANCELLED);
         repository.save(appointment);
-        try {
-            emailService.sendEmail(user.getEmail(), "Cita cancelada", "Tu cita con fecha " + appointment.getAppointmentDatetime() + " ha sido cancelada");
-        } catch (Exception e) {
-            System.out.println("Error enviando email: " + e.getMessage());
-        }
+        publishAppointmentEmail(user.getEmail(), "Cita cancelada", "Tu cita con fecha " + appointment.getAppointmentDatetime() + " ha sido cancelada");
         return AppointmentMapper.toDto(appointment);
 
     }
 
+    @Transactional(readOnly = true)
     public Page<AppointmentResponseDto> findByBusiness(Long businessId, Long userId, Pageable pageable){
         Business business = businessRepository.findById(businessId).orElseThrow(() ->
                 new ResourceNotFoundException("Business not found with id: " + businessId));
@@ -107,6 +102,10 @@ public class AppointmentService {
         }
 
         return repository.findByEmployee_Business(business, pageable).map(AppointmentMapper::toDto);
+    }
+
+    private void publishAppointmentEmail(String to, String subject, String body){
+        eventPublisher.publishEvent(new EmailNotificationEvent(to, subject, body));
     }
 
 }

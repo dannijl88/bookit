@@ -13,7 +13,10 @@ import java.time.LocalDateTime;
 @Getter @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "appointments")
+@Table(name = "appointments",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_employee_active_slot",
+                columnNames = {"employee_id", "active_slot"}))
 public class Appointment {
 
     @Id
@@ -22,6 +25,10 @@ public class Appointment {
 
     @NotNull
     private LocalDateTime appointmentDatetime;
+
+    @Column(name = "active_slot", insertable = false, updatable = false,
+            columnDefinition = "DATETIME GENERATED ALWAYS AS (CASE WHEN status <> 'CANCELLED' THEN appointment_datetime ELSE NULL END)")
+    private LocalDateTime activeSlot;
 
     @Enumerated(EnumType.STRING)
     private Status status;

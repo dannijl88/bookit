@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class ReviewService {
     private final AppointmentRepository appointmentRepository;
     private final BusinessRepository businessRepository;
 
+    @Transactional
     public ReviewResponseDto create(ReviewRequestDto dto, Long appointmentId, Long userId){
 
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() ->
@@ -45,12 +47,14 @@ public class ReviewService {
         return ReviewMapper.toReviewResponse(newReview);
     }
 
+    @Transactional(readOnly = true)
     public Page<ReviewResponseDto> getReviewsByBusiness(Long businessId, Pageable pageable){
         Business business = businessRepository.findById(businessId).orElseThrow(() ->
                 new ResourceNotFoundException("Business not found with id: " + businessId));
         return repository.findByAppointment_Employee_Business(business, pageable).map(ReviewMapper::toReviewResponse);
     }
 
+    @Transactional
     public void delete(Long reviewId, Long userId){
         Review review = repository.findById(reviewId).orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
         if(!review.getAppointment().getClient().getId().equals(userId)){
