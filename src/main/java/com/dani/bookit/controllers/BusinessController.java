@@ -73,6 +73,7 @@ public class BusinessController {
     }
 
     @GetMapping("/{businessId}/appointments")
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
     @Operation(summary = "Citas del negocio", description = "Obtiene las citas de un negocio para el propietario")
     @ApiResponse(responseCode = "200", description = "Citas obtenidas correctamente")
     @ApiResponse(responseCode = "404", description = "Negocio no encontrado")

@@ -52,6 +52,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/me")
+    @PreAuthorize("hasRole('CLIENT')")
     @Operation(summary = "Mis citas", description = "Obtiene las citas del cliente autenticado")
     @ApiResponse(responseCode = "200", description = "Lista de citas obtenida correctamente")
     public ResponseEntity<Page<AppointmentResponseDto>> getMyAppointments(@AuthenticationPrincipal CustomUserDetails userDetails, Pageable pageable){
@@ -60,6 +61,7 @@ public class AppointmentController {
     }
 
     @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('CLIENT')")
     @Operation(summary = "Cancelar cita", description = "Cancela una cita existente")
     @ApiResponse(responseCode = "200", description = "Cita cancelada correctamente")
     @ApiResponse(responseCode = "404", description = "Cita no encontrada")
