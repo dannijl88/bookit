@@ -49,6 +49,14 @@ public class BusinessService {
          return repository.findByCategoryIgnoreCaseAndActiveTrue(category, pageable).map(BusinessMapper::toResponseDto);
      }
 
+    @Transactional(readOnly = true)
+    @Cacheable(value = "businesses", key = "'owner-' + #ownerId")
+    public List<BusinessResponseDto> findByOwner(Long ownerId){
+        User owner = userRepository.findById(ownerId).orElseThrow(() ->
+                new ResourceNotFoundException("User not found with id: " + ownerId));
+        return repository.findByOwner(owner).stream().map(BusinessMapper::toResponseDto).toList();
+    }
+
     @Transactional
     @CacheEvict(value = "businesses", allEntries = true)
      public BusinessResponseDto update(BusinessRequestDto dto, Long businessId, Long userId){

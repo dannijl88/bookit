@@ -6,11 +6,13 @@ import com.dani.bookit.entities.Role;
 import com.dani.bookit.entities.User;
 import com.dani.bookit.exceptions.AccessDeniedCustomException;
 import com.dani.bookit.exceptions.ResourceAlreadyInUseException;
+import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.mappers.UserMapper;
 import com.dani.bookit.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,7 @@ public class UserService {
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     public UserResponseDto register(UserRequestDto dto){
 
         if (repository.existsByEmail(dto.getEmail())){
@@ -35,6 +38,13 @@ public class UserService {
 
         repository.save(newUser);
         return UserMapper.toResponseDto(newUser);
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponseDto getById(Long userId){
+        User user = repository.findById(userId).orElseThrow(() ->
+                new ResourceNotFoundException("User not found with id: " + userId));
+        return UserMapper.toResponseDto(user);
     }
 
 }

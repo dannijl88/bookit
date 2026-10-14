@@ -63,6 +63,14 @@ public class BusinessController {
         return ResponseEntity.ok(service.findByCategory(category, pageable));
     }
 
+    @GetMapping("/mine")
+    @PreAuthorize("hasRole('BUSINESS_OWNER')")
+    @Operation(summary = "Mis negocios", description = "Obtiene los negocios del propietario autenticado")
+    @ApiResponse(responseCode = "200", description = "Negocios obtenidos correctamente")
+    public ResponseEntity<List<BusinessResponseDto>> findMine(@AuthenticationPrincipal CustomUserDetails userDetails){
+        return ResponseEntity.ok(service.findByOwner(userDetails.getUser().getId()));
+    }
+
     @GetMapping("/{businessId}/services")
     @Operation(summary = "Obtener servicios del negocio", description = "Lista los servicios ofrecidos por un negocio")
     @ApiResponse(responseCode = "200", description = "Servicios obtenidos correctamente")
