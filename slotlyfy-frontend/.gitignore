@@ -2,7 +2,10 @@ node_modules
 dist
 dist-ssr
 *.local
+# Variables de entorno locales: nunca versionar valores reales (.env.example sí)
+.env
 .env.local
+.env.*.local
 
 logs
 *.log
