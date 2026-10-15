@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { extractApiError } from '../../lib/errors'
@@ -16,6 +16,10 @@ export default function LoginPage() {
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  // Si el login tarda, es probable que el backend esté despertando tras la
+  // inactividad de Render: lo avisamos en vez de dejar la pantalla "colgada".
+  const [wakingUp, setWakingUp] = useState(false)
+  const wakeTimer = useRef(null)
 
   const destination = location.state?.from || '/mis-citas'
 
@@ -33,6 +37,9 @@ export default function LoginPage() {
     if (!validate()) return
 
     setSubmitting(true)
+    setWakingUp(false)
+    // Aviso sólo si la petición se alarga (backend despertando), no para logins normales.
+    wakeTimer.current = setTimeout(() => setWakingUp(true), 4000)
     try {
       await login({ email: form.email.trim(), password: form.password })
       navigate(destination, { replace: true })
@@ -40,6 +47,8 @@ export default function LoginPage() {
       // 401 con cuerpo vacío en el backend -> mensaje genérico de credenciales.
       setFormError(extractApiError(error, 'No hemos podido iniciar sesión.'))
     } finally {
+      clearTimeout(wakeTimer.current)
+      setWakingUp(false)
       setSubmitting(false)
     }
   }
@@ -59,6 +68,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {formError && <Alert tone="error">{formError}</Alert>}
+
+          {submitting && wakingUp && (
+            <Alert tone="info">
+              El servidor está despertando tras un rato inactivo: puede tardar hasta un minuto.
+              Un momento…
+            </Alert>
+          )}
 
           <Input
             label="Email"

@@ -9,7 +9,10 @@ export const http = axios.create({
   // y sólo añade riesgo de CORS, así que lo dejamos desactivado.
   withCredentials: false,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000,
+  // 70 s: el backend en Render (plan gratuito) se duerme tras 15 min de
+  // inactividad y la primera petición puede tardar cerca de un minuto en
+  // despertarlo. Menos que esto haría fallar la petición antes de tiempo.
+  timeout: 70000,
 })
 
 /** Rutas que nunca deben disparar un "logout" automático por error de auth. */

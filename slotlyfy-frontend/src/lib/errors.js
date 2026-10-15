@@ -16,7 +16,9 @@ const FRIENDLY_MESSAGES = {
   'review already exists': 'Esta cita ya tiene una reseña.',
 }
 
-const OFFLINE_MESSAGE = 'No hemos podido conectar con el servidor. ¿Sigue el backend activo?'
+const OFFLINE_MESSAGE =
+  'No hemos podido conectar con el servidor. Si el backend lleva un rato inactivo, ' +
+  'puede tardar hasta un minuto en despertar: espera un momento y vuelve a intentarlo.'
 
 function normalize(message) {
   const key = String(message || '').trim().toLowerCase()
@@ -37,7 +39,9 @@ export function extractApiError(error, fallback = 'Ha ocurrido un error inespera
 
   // Sin respuesta => red caída, CORS, o timeout.
   if (!error.response) {
-    if (error.code === 'ECONNABORTED') return 'La petición ha tardado demasiado. Inténtalo de nuevo.'
+    if (error.code === 'ECONNABORTED') {
+      return 'La petición ha tardado demasiado. El servidor puede estar despertando; vuelve a intentarlo en unos segundos.'
+    }
     return OFFLINE_MESSAGE
   }
 
