@@ -8,8 +8,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
@@ -73,6 +75,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<String> handleSpringAccessDenied(AccessDeniedException ex){
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You don't have permission");
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<String> handleMissingParameter(MissingServletRequestParameterException ex){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Required parameter '" + ex.getParameterName() + "' is missing");
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<String> handleTypeMismatch(MethodArgumentTypeMismatchException ex){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Invalid value for parameter '" + ex.getName() + "'");
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
