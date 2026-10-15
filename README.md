@@ -4,12 +4,13 @@ Backend de una plataforma SaaS de reservas multi-negocio (tipo Booksy), construi
 
 Proyecto personal construido para practicar y demostrar un nivel de backend más allá de un CRUD básico: seguridad real con JWT y control de acceso por rol/propiedad, un algoritmo de disponibilidad horaria calculado desde cero, caché con invalidación, y notificaciones por email.
 
-> ⚠️ Proyecto en desarrollo activo. El backend está funcionalmente completo en su flujo principal (negocios, empleados, servicios, horarios, disponibilidad, reservas, reseñas), con tests automatizados y la configuración de despliegue lista; queda pendiente el despliegue efectivo en Render + Neon.
+> ⚠️ Proyecto en desarrollo activo, pero **desplegado y funcional** para demostración (ver [Demo](#demo)). El backend corre en el plan gratuito de Render, que duerme el servicio tras un rato de inactividad, así que la primera petición puede tardar cerca de un minuto.
 
 ---
 
 ## Índice
 
+- [Demo](#demo)
 - [Qué hace la app](#qué-hace-la-app)
 - [Stack técnico](#stack-técnico)
 - [Decisiones técnicas destacadas](#decisiones-técnicas-destacadas)
@@ -17,12 +18,35 @@ Proyecto personal construido para practicar y demostrar un nivel de backend más
 - [Seguridad](#seguridad)
 - [Cómo levantarlo en local](#cómo-levantarlo-en-local)
 - [Despliegue con Docker](#despliegue-con-docker)
+- [Arquitectura de despliegue](#arquitectura-de-despliegue)
 - [Despliegue en Render + Neon](#despliegue-en-render--neon)
 - [Endpoints principales](#endpoints-principales)
 - [Roadmap / pendiente](#roadmap--pendiente)
 - [Autor](#autor)
 
 ---
+
+## Demo
+
+Aplicación desplegada y funcionando:
+
+| | URL |
+|---|---|
+| Frontend | https://bookit-gamma-three.vercel.app |
+| API (backend) | https://bookit-api-y6p3.onrender.com |
+| Swagger UI | https://bookit-api-y6p3.onrender.com/swagger-ui.html |
+| Health check | https://bookit-api-y6p3.onrender.com/actuator/health |
+
+**Usuarios de demo** (los crea el seeder cuando `DEMO_SEED=true`):
+
+| Rol | Email | Contraseña |
+|---|---|---|
+| Propietario de negocio | `owner@demo.com` | `demo1234` |
+| Cliente | `client@demo.com` | `demo1234` |
+
+> ⏳ **Arranque en frío:** el backend está en el plan gratuito de Render, que duerme el servicio tras unos 15 minutos sin tráfico. La primera petición después de ese tiempo puede tardar cerca de un minuto en responder. La web lanza una petición de calentamiento al cargar y muestra un aviso en el login si el backend está despertando; si aun así tarda, espera unos segundos y reinténtalo.
+
+> 📧 **Correos:** las notificaciones se envían a un sandbox de Mailtrap, así que **no se mandan correos reales**.
 
 ## Qué hace la app
 
@@ -141,13 +165,23 @@ Detalles de la implementación:
 - Los secretos y la configuración se leen de `.env` (`docker-compose.yml` no hardcodea nada). El backend sobrescribe el datasource de `application.properties` vía variables de entorno (`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`).
 - El backend espera a que PostgreSQL esté sano (`healthcheck` con `pg_isready` + `depends_on: condition: service_healthy`) antes de arrancar; Hibernate crea el esquema con `ddl-auto=update`.
 
+## Arquitectura de despliegue
+
+```
+Frontend (Vercel)  ──HTTPS──▶  Backend Spring Boot (Docker en Render)  ──TLS──▶  PostgreSQL (Neon)
+```
+
+- **Frontend:** Vercel (build de Vite; `VITE_API_URL` apunta al backend; las rutas de React Router se resuelven con `vercel.json`).
+- **Backend:** Render, imagen Docker multi-stage, perfil `prod` y health check en `/actuator/health`.
+- **Base de datos:** PostgreSQL gestionado en Neon, con conexión TLS (`?sslmode=require`).
+
 ## Despliegue en Render + Neon
 
-La configuración ya está lista para desplegarse en el plan gratuito de Render con una base de datos PostgreSQL gestionada en Neon:
+La demo está desplegada con esta configuración en el plan gratuito de Render con una base de datos PostgreSQL gestionada en Neon:
 
 1. **Base de datos (Neon):** crea un proyecto y copia la cadena de conexión. Añade `?sslmode=require` (Neon exige TLS): `jdbc:postgresql://<host>/<db>?sslmode=require`.
 2. **Backend (Render):** nuevo *Web Service* apuntando al repositorio, con runtime **Docker** (usa el `Dockerfile` de la raíz). Configura las variables de entorno de la tabla de abajo. Render inyecta el puerto automáticamente por `PORT`; el health check público es `GET /actuator/health`.
-3. **Frontend:** despliégalo como *Static Site* (o contenedor), definiendo `VITE_API_URL` con la URL pública del backend en tiempo de build.
+3. **Frontend (Vercel):** despliegue estático; define `VITE_API_URL` con la URL pública del backend en tiempo de build.
 
 ### Variables de entorno (backend)
 
@@ -158,7 +192,7 @@ La configuración ya está lista para desplegarse en el plan gratuito de Render 
 | `SPRING_DATASOURCE_PASSWORD` | Sí | Contraseña de Neon. |
 | `JWT_SECRET` | Sí | Secreto HS256 (mínimo 32 caracteres). |
 | `SPRING_PROFILES_ACTIVE` | No | `prod` activa logging sobrio y *lazy init* (arranque más rápido). |
-| `CORS_ALLOWED_ORIGINS` | Sí | Origen del frontend desplegado (p. ej. `https://slotlyfy.onrender.com`). |
+| `CORS_ALLOWED_ORIGINS` | Sí | Origen del frontend desplegado (p. ej. `https://bookit-gamma-three.vercel.app`). |
 | `DEMO_SEED` | No | `true` carga datos de ejemplo (idempotente). |
 | `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` | No | Si no se configuran, la app arranca igual y simplemente no envía correos. |
 | `DB_POOL_SIZE` | No | Conexiones del pool de Hikari (por defecto 5, alineado con el límite de Neon). |
@@ -190,9 +224,10 @@ La configuración ya está lista para desplegarse en el plan gratuito de Render 
 
 ## Documentación de la API (Swagger)
 
-La API está documentada con **OpenAPI 3** mediante springdoc, y se puede explorar y probar desde el navegador con Swagger UI. Con la aplicación en marcha:
+La API está documentada con **OpenAPI 3** mediante springdoc, y se puede explorar y probar desde el navegador con Swagger UI.
 
-- **Swagger UI:** `http://localhost:8080/swagger-ui.html`
+- **Online (demo):** https://bookit-api-y6p3.onrender.com/swagger-ui.html
+- **En local:** `http://localhost:8080/swagger-ui.html`
 - **Especificación OpenAPI (JSON):** `http://localhost:8080/v3/api-docs`
 
 Los endpoints están agrupados por recurso, con su descripción, parámetros y respuestas posibles.
@@ -216,7 +251,8 @@ Los endpoints están agrupados por recurso, con su descripción, parámetros y r
 - [x] Frontend de demostración
 - [x] Docker local (Dockerfiles + `docker-compose`)
 - [x] Preparación para Render (Dockerfile multi-stage, perfil `prod`, `PORT`, Actuator, datos de demo)
-- [ ] Despliegue efectivo en Render + Neon
+- [x] Despliegue en Render + Neon (backend) y Vercel (frontend)
+- [x] Manejo del arranque en frío del plan gratuito (calentamiento, timeout ampliado y avisos en la UI)
 
 Fuera de alcance por ahora: integración de pagos reales — pendiente de decidir si el proyecto evoluciona hacia un lanzamiento real.
 

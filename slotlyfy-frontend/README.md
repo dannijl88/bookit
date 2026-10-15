@@ -6,6 +6,16 @@ barberías, spas y negocios de servicios). Consume el backend Spring Boot que co
 
 Proyecto **independiente**: no comparte nada con el backend más allá de la API HTTP.
 
+## Demo
+
+- **Online:** https://bookit-gamma-three.vercel.app
+- **API de la demo:** https://bookit-api-y6p3.onrender.com
+
+El backend está en el plan gratuito de Render y se duerme tras unos 15 minutos sin
+tráfico: la primera petición después de ese tiempo puede tardar cerca de un minuto. Por eso
+la app lanza una petición de calentamiento a `/actuator/health` al cargar y muestra un aviso
+en el login si el backend está despertando.
+
 ## Stack
 
 - **React 19** + **Vite 8**
@@ -23,12 +33,19 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-El backend necesita estar en marcha (`http://localhost:8080`). La URL se puede cambiar
-en `.env`:
+El backend necesita estar en marcha (`http://localhost:8080`). La URL se configura con
+`VITE_API_URL`; copia la plantilla y ajusta si hace falta:
+
+```bash
+cp .env.example .env
+```
 
 ```
 VITE_API_URL=http://localhost:8080
 ```
+
+En Vercel, `VITE_API_URL` se define como variable de entorno del proyecto (se incrusta en
+el bundle en build-time).
 
 > **El puerto 5173 es obligatorio.** El `CorsConfig` del backend sólo permite el origen
 > `http://localhost:5173`. Por eso `vite.config.js` fija el puerto con `strictPort: true`:
