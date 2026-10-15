@@ -27,7 +27,7 @@ public class Appointment {
     private LocalDateTime appointmentDatetime;
 
     @Column(name = "active_slot", insertable = false, updatable = false,
-            columnDefinition = "DATETIME GENERATED ALWAYS AS (CASE WHEN status <> 'CANCELLED' THEN appointment_datetime ELSE NULL END)")
+            columnDefinition = "timestamp GENERATED ALWAYS AS (CASE WHEN status <> 'CANCELLED' THEN appointment_datetime ELSE NULL END) STORED")
     private LocalDateTime activeSlot;
 
     @Enumerated(EnumType.STRING)
