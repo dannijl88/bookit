@@ -14,13 +14,21 @@ COPY src/ src/
 RUN ./mvnw -B -q clean package -DskipTests
 
 # ---------- Runtime ----------
-FROM eclipse-temurin:25-jre-noble
+# Alpine mantiene la imagen final pequeña (~100 MB frente a ~300 MB de una basada en Ubuntu).
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 # Usuario sin privilegios: el contenedor no necesita root para correr el jar.
-RUN useradd --system --create-home --uid 1001 appuser
+RUN addgroup -S appuser && adduser -S -G appuser -u 1001 appuser
 COPY --from=build /app/target/*.jar app.jar
 USER appuser
 
+# Render inyecta el puerto por la variable PORT (application.properties: server.port=${PORT:8080}).
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+
+# Ajustes pensados para el plan free de Render (512 MB / 0.1 CPU):
+#  -XX:MaxRAMPercentage=75  -> heap ≈75% del límite del contenedor (~384 MB) sin hardcodear -Xmx
+#  -XX:+UseSerialGC          -> GC de un solo hilo: menos overhead con sólo 0.1 CPU
+#  -XX:TieredStopAtLevel=1   -> menos compilación JIT a cambio de arrancar antes
+#  -Djava.security.egd=...   -> evita bloqueos por falta de entropía en contenedores pequeños
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-XX:+UseSerialGC", "-XX:TieredStopAtLevel=1", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/app.jar"]
