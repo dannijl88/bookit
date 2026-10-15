@@ -1,4 +1,4 @@
-# Levanta el stack completo: MySQL + backend (Spring Boot) + frontend (Nginx).
+# Levanta el stack completo: PostgreSQL + backend (Spring Boot) + frontend (Nginx).
 #
 #   1. cp .env.example .env   (y ajusta DB_PASSWORD / JWT_SECRET)
 #   2. docker compose up --build
@@ -7,20 +7,21 @@
 # Todos los secretos se leen de `.env` (ver .env.example); nada se hardcodea aquí.
 
 services:
-  mysql:
-    image: mysql:8.4
+  postgres:
+    image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
-      MYSQL_DATABASE: bookit
+      POSTGRES_DB: bookit
+      POSTGRES_USER: bookit
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
     volumes:
-      - mysql-data:/var/lib/mysql
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_PASSWORD}"]
+      test: ["CMD-SHELL", "pg_isready -U bookit -d bookit"]
       interval: 10s
       timeout: 5s
       retries: 12
-      start_period: 30s
+      start_period: 20s
     # Sin puerto publicado: sólo accesible desde la red interna de Compose.
 
   backend:
@@ -28,13 +29,13 @@ services:
       context: .
     restart: unless-stopped
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     environment:
       # Sobrescriben application.properties vía relaxed binding de Spring Boot.
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bookit
-      SPRING_DATASOURCE_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookit
+      SPRING_DATASOURCE_USERNAME: bookit
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
       JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET en .env}
       MAIL_HOST: ${MAIL_HOST:-sandbox.smtp.mailtrap.io}
       MAIL_PORT: ${MAIL_PORT:-2525}
@@ -56,4 +57,4 @@ services:
       - "5173:80"
 
 volumes:
-  mysql-data:
+  postgres-data:
