@@ -4,7 +4,7 @@ Backend de una plataforma SaaS de reservas multi-negocio (tipo Booksy), construi
 
 Proyecto personal construido para practicar y demostrar un nivel de backend más allá de un CRUD básico: seguridad real con JWT y control de acceso por rol/propiedad, un algoritmo de disponibilidad horaria calculado desde cero, caché con invalidación, y notificaciones por email.
 
-> ⚠️ Proyecto en desarrollo activo. El backend está funcionalmente completo en su flujo principal (negocios, empleados, servicios, horarios, disponibilidad, reservas, reseñas), con tests automatizados; queda pendiente el despliegue en un servidor real.
+> ⚠️ Proyecto en desarrollo activo. El backend está funcionalmente completo en su flujo principal (negocios, empleados, servicios, horarios, disponibilidad, reservas, reseñas), con tests automatizados y la configuración de despliegue lista; queda pendiente el despliegue efectivo en Render + Neon.
 
 ---
 
@@ -17,6 +17,7 @@ Proyecto personal construido para practicar y demostrar un nivel de backend más
 - [Seguridad](#seguridad)
 - [Cómo levantarlo en local](#cómo-levantarlo-en-local)
 - [Despliegue con Docker](#despliegue-con-docker)
+- [Despliegue en Render + Neon](#despliegue-en-render--neon)
 - [Endpoints principales](#endpoints-principales)
 - [Roadmap / pendiente](#roadmap--pendiente)
 - [Autor](#autor)
@@ -36,7 +37,7 @@ El corazón del proyecto es el **cálculo de disponibilidad**: a partir del hora
 
 - **Java 25**
 - **Spring Boot** (Spring Web, Spring Data JPA, Spring Security, Spring Cache, Spring Mail)
-- **MySQL** como base de datos relacional
+- **PostgreSQL** como base de datos relacional (local en Docker, Neon en producción)
 - **JWT** (JJWT) para autenticación stateless
 - **Lombok** para reducir boilerplate
 - **Jakarta Bean Validation** para validación de DTOs
@@ -84,14 +85,20 @@ User (CLIENT / BUSINESS_OWNER)
 
 ## Cómo levantarlo en local
 
-1. Clona el repositorio.
-2. Crea una base de datos MySQL vacía.
-3. Los secretos no viven en el repositorio: se leen de variables de entorno con valores por defecto solo para desarrollo local (`src/main/resources/application.properties`).
+La forma más sencilla de levantar todo el stack (base de datos + backend + frontend) es [Docker Compose](#despliegue-con-docker). Si prefieres ejecutar el backend con Maven:
+
+1. Clona el repositorio y arranca un PostgreSQL. Lo más rápido es con Docker:
+
+```bash
+docker run -e POSTGRES_DB=bookit -e POSTGRES_USER=bookit -e POSTGRES_PASSWORD=secret -p 5432:5432 postgres:17-alpine
+```
+
+2. Los secretos no viven en el repositorio: se leen de variables de entorno con valores por defecto solo para desarrollo local (`src/main/resources/application.properties`).
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/bookit
-spring.datasource.username=root
-spring.datasource.password=${DB_PASSWORD}
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bookit}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:bookit}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
 
 jwt.secret=${JWT_SECRET}          # mínimo 32 caracteres (HS256)
 
@@ -101,19 +108,20 @@ spring.mail.username=${MAIL_USERNAME}
 spring.mail.password=${MAIL_PASSWORD}
 
 app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+app.demo-seed=${DEMO_SEED:false}  # true carga datos de ejemplo (idempotente)
 ```
 
-4. Ejecuta la aplicación (añade `--spring.profiles.active=dev` para ver las consultas SQL):
+3. Ejecuta la aplicación (añade `--spring.profiles.active=dev` para ver las consultas SQL):
 
 ```bash
 mvn spring-boot:run
 ```
 
-5. La API queda disponible en `http://localhost:8080`.
+4. La API queda disponible en `http://localhost:8080`.
 
 ## Despliegue con Docker
 
-El stack completo (MySQL + backend + frontend servido por Nginx) se levanta con Docker Compose:
+El stack completo (PostgreSQL + backend + frontend servido por Nginx) se levanta con Docker Compose:
 
 ```bash
 cp .env.example .env      # ajusta DB_PASSWORD y JWT_SECRET (mínimo 32 caracteres)
@@ -122,14 +130,41 @@ docker compose up --build
 
 - **Frontend:** `http://localhost:5173` (build de Vite servido por Nginx, con fallback de SPA para las rutas de React Router).
 - **API:** `http://localhost:8080` (Swagger en `/swagger-ui.html`).
-- **MySQL:** solo accesible desde la red interna de Compose (sin puerto publicado); los datos persisten en el volumen `mysql-data`.
+- **PostgreSQL:** solo accesible desde la red interna de Compose (sin puerto publicado); los datos persisten en el volumen `postgres-data`.
+
+Para cargar datos de demostración (negocios, empleados, servicios y citas de ejemplo) arranca con `DEMO_SEED=true`. Es idempotente: si los datos ya existen no se duplican.
 
 Detalles de la implementación:
 
-- El backend se construye en una imagen multi-stage (`eclipse-temurin:25-jdk-noble` → `eclipse-temurin:25-jre-noble`) y corre como usuario sin privilegios. Las dependencias de Maven se descargan en una capa que solo se invalida cuando cambia el `pom.xml`.
+- El backend se construye en una imagen multi-stage (`eclipse-temurin:25-jdk-noble` → `eclipse-temurin:25-jre-alpine`) y corre como usuario sin privilegios. Las dependencias de Maven se descargan en una capa que solo se invalida cuando cambia el `pom.xml`.
 - El frontend se compila con `node:22-alpine` y se sirve con `nginx:1.27-alpine`; la URL de la API (`VITE_API_URL`) se incrusta en el bundle en tiempo de build.
-- Los secretos y la configuración se leen de `.env` (`docker-compose.yml` no hardcodea nada). El backend sobrescribe el datasource de `application.properties` vía variables de entorno (`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `DB_PASSWORD`).
-- El backend espera a que MySQL esté sano (`healthcheck` + `depends_on: condition: service_healthy`) antes de arrancar; Hibernate crea el esquema con `ddl-auto=update`.
+- Los secretos y la configuración se leen de `.env` (`docker-compose.yml` no hardcodea nada). El backend sobrescribe el datasource de `application.properties` vía variables de entorno (`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`).
+- El backend espera a que PostgreSQL esté sano (`healthcheck` con `pg_isready` + `depends_on: condition: service_healthy`) antes de arrancar; Hibernate crea el esquema con `ddl-auto=update`.
+
+## Despliegue en Render + Neon
+
+La configuración ya está lista para desplegarse en el plan gratuito de Render con una base de datos PostgreSQL gestionada en Neon:
+
+1. **Base de datos (Neon):** crea un proyecto y copia la cadena de conexión. Añade `?sslmode=require` (Neon exige TLS): `jdbc:postgresql://<host>/<db>?sslmode=require`.
+2. **Backend (Render):** nuevo *Web Service* apuntando al repositorio, con runtime **Docker** (usa el `Dockerfile` de la raíz). Configura las variables de entorno de la tabla de abajo. Render inyecta el puerto automáticamente por `PORT`; el health check público es `GET /actuator/health`.
+3. **Frontend:** despliégalo como *Static Site* (o contenedor), definiendo `VITE_API_URL` con la URL pública del backend en tiempo de build.
+
+### Variables de entorno (backend)
+
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `SPRING_DATASOURCE_URL` | Sí | URL JDBC de Neon, con `?sslmode=require`. |
+| `SPRING_DATASOURCE_USERNAME` | Sí | Usuario de Neon. |
+| `SPRING_DATASOURCE_PASSWORD` | Sí | Contraseña de Neon. |
+| `JWT_SECRET` | Sí | Secreto HS256 (mínimo 32 caracteres). |
+| `SPRING_PROFILES_ACTIVE` | No | `prod` activa logging sobrio y *lazy init* (arranque más rápido). |
+| `CORS_ALLOWED_ORIGINS` | Sí | Origen del frontend desplegado (p. ej. `https://slotlyfy.onrender.com`). |
+| `DEMO_SEED` | No | `true` carga datos de ejemplo (idempotente). |
+| `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` | No | Si no se configuran, la app arranca igual y simplemente no envía correos. |
+| `DB_POOL_SIZE` | No | Conexiones del pool de Hikari (por defecto 5, alineado con el límite de Neon). |
+| `DB_DDL_AUTO` | No | Estrategia de Hibernate (por defecto `update`; usar `validate` cuando existan migraciones). |
+
+> En el plan gratuito de Render el servicio se **duerme** por inactividad: la primera petición después de un rato puede tardar alrededor de un minuto (arranque en frío de la JVM).
 
 ## Endpoints principales
 
@@ -145,6 +180,7 @@ Detalles de la implementación:
 | GET | `/api/businesses/{id}/employees` | Empleados activos de un negocio | Público |
 | GET | `/api/businesses/{id}/reviews` | Reseñas de un negocio (paginado) | Público |
 | GET | `/api/availability?employeeId=&serviceOfferingId=&date=` | Huecos libres reales | Público |
+| GET | `/actuator/health` | Estado de la aplicación (health check) | Público |
 | POST | `/api/appointments` | Reservar cita (valida disponibilidad) | `CLIENT` |
 | GET | `/api/appointments/me` | Mis citas (paginado) | `CLIENT` |
 | PATCH | `/api/appointments/{id}/cancel` | Cancelar mi cita | `CLIENT` |
@@ -179,7 +215,8 @@ Los endpoints están agrupados por recurso, con su descripción, parámetros y r
 - [x] Tests automatizados (unitarios e integración)
 - [x] Frontend de demostración
 - [x] Docker local (Dockerfiles + `docker-compose`)
-- [ ] Despliegue en servidor
+- [x] Preparación para Render (Dockerfile multi-stage, perfil `prod`, `PORT`, Actuator, datos de demo)
+- [ ] Despliegue efectivo en Render + Neon
 
 Fuera de alcance por ahora: integración de pagos reales — pendiente de decidir si el proyecto evoluciona hacia un lanzamiento real.
 

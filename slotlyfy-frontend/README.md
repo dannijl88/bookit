@@ -58,7 +58,7 @@ docker build -t slotlyfy-frontend --build-arg VITE_API_URL=http://localhost:8080
 docker run -p 5173:80 slotlyfy-frontend
 ```
 
-Normalmente no lo construirás a mano: se levanta junto al backend y MySQL con el
+Normalmente no lo construirás a mano: se levanta junto al backend y PostgreSQL con el
 `docker-compose.yml` de la raíz del repositorio (`docker compose up --build`).
 
 `verify:contract` levanta un servidor que imita las respuestas del backend real y comprueba
