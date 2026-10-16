@@ -3,6 +3,7 @@ import { businessApi, ownerApi } from '../../api'
 import useAsync from '../../hooks/useAsync'
 import { useToast } from '../../hooks/useToast'
 import { extractApiError } from '../../lib/errors'
+import { resolveListState } from '../../lib/viewState'
 import { DAYS_OF_WEEK } from '../../lib/domain'
 import { slotToShortTime } from '../../lib/format'
 import { Card } from '../../components/ui/Card'
@@ -30,6 +31,11 @@ export default function OwnerTeamPage() {
   if (!business) return <EmptyBusinessState />
 
   const list = employees.data || []
+  const listState = resolveListState({
+    loading: employees.loading,
+    error: Boolean(employees.errorMessage),
+    count: list.length,
+  })
 
   const handleCreate = async (event) => {
     event.preventDefault()
@@ -61,14 +67,14 @@ export default function OwnerTeamPage() {
             Cada profesional necesita un horario semanal para que los clientes puedan reservar.
           </p>
 
-          {employees.loading && <LoadingBlock label="Cargando equipo…" />}
-          {employees.errorMessage && (
+          {listState === 'loading' && <LoadingBlock label="Cargando equipo…" />}
+          {listState === 'error' && (
             <Alert tone="error" className="mt-4">
               {employees.errorMessage}
             </Alert>
           )}
 
-          {!employees.loading && list.length === 0 && (
+          {listState === 'empty' && (
             <EmptyState
               className="mt-4"
               icon="👥"
@@ -77,7 +83,7 @@ export default function OwnerTeamPage() {
             />
           )}
 
-          {list.length > 0 && (
+          {listState === 'data' && (
             <div className="mt-4 space-y-4">
               {list.map((employee) => (
                 <EmployeeCard

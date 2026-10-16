@@ -4,6 +4,7 @@ import { appointmentApi, businessApi } from '../../api'
 import useAsync from '../../hooks/useAsync'
 import { useToast } from '../../hooks/useToast'
 import { extractApiError } from '../../lib/errors'
+import { resolveListState } from '../../lib/viewState'
 import { APPOINTMENT_STATUSES, STATUS_META, statusMeta } from '../../lib/domain'
 import { Card, StatusBadge } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -51,6 +52,11 @@ export default function OwnerAppointmentsPage() {
   if (!business) return <EmptyBusinessState />
 
   const appointments = data?.content || []
+  const listState = resolveListState({
+    loading,
+    error: Boolean(errorMessage),
+    count: appointments.length,
+  })
 
   // El backend pagina sin filtro de estado; el chip filtra la página actual.
   const visible = status
@@ -115,9 +121,9 @@ export default function OwnerAppointmentsPage() {
         </Alert>
       )}
 
-      {loading && <LoadingBlock label="Cargando citas…" />}
+      {listState === 'loading' && <LoadingBlock label="Cargando citas…" />}
 
-      {!loading && appointments.length === 0 && (
+      {listState === 'empty' && (
         <EmptyState
           icon="📅"
           title="Todavía no hay citas"
@@ -133,7 +139,7 @@ export default function OwnerAppointmentsPage() {
         />
       )}
 
-      {!loading && appointments.length > 0 && visible.length === 0 && (
+      {listState === 'data' && visible.length === 0 && (
         <EmptyState
           icon="🔍"
           title="Sin citas con ese estado en esta página"

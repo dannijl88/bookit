@@ -37,7 +37,9 @@ export default function App() {
               </Route>
 
               <Route element={<ProtectedRoute />}>
-                <Route path="mis-citas" element={<MyAppointmentsPage />} />
+                <Route element={<RoleRoute role={ROLES.CLIENT} />}>
+                  <Route path="mis-citas" element={<MyAppointmentsPage />} />
+                </Route>
 
                 {/*
                   El panel exige el rol BUSINESS_OWNER y comparte un Provider

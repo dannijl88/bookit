@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { extractApiError } from '../../lib/errors'
+import { homePathForRole } from '../../lib/domain'
 import Button from '../../components/ui/Button'
 import { Input } from '../../components/ui/FormControls'
 import { Alert } from '../../components/ui/Feedback'
@@ -21,8 +22,6 @@ export default function LoginPage() {
   const [wakingUp, setWakingUp] = useState(false)
   const wakeTimer = useRef(null)
 
-  const destination = location.state?.from || '/mis-citas'
-
   const validate = () => {
     const next = {}
     if (!form.email.trim()) next.email = 'Escribe tu email.'
@@ -41,8 +40,9 @@ export default function LoginPage() {
     // Aviso sólo si la petición se alarga (backend despertando), no para logins normales.
     wakeTimer.current = setTimeout(() => setWakingUp(true), 4000)
     try {
-      await login({ email: form.email.trim(), password: form.password })
-      navigate(destination, { replace: true })
+      const session = await login({ email: form.email.trim(), password: form.password })
+      // Si venía de una ruta protegida volvemos allí; si no, cada rol va a su inicio.
+      navigate(location.state?.from || homePathForRole(session.role), { replace: true })
     } catch (error) {
       // 401 con cuerpo vacío en el backend -> mensaje genérico de credenciales.
       setFormError(extractApiError(error, 'No hemos podido iniciar sesión.'))

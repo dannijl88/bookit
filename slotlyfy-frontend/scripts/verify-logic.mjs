@@ -14,6 +14,8 @@ import {
   toDateInputValue,
 } from '../src/lib/format.js'
 import { buildPage, dedupeAndSort, toPage, pageWindow } from '../src/lib/pagination.js'
+import { homePathForRole, ROLES } from '../src/lib/domain.js'
+import { resolveListState, resolvePanelState } from '../src/lib/viewState.js'
 
 let checks = 0
 const check = (label, fn) => {
@@ -134,6 +136,32 @@ check('dedupeAndSort elimina ids repetidos y ordena por nombre', () => {
 check('pageWindow colapsa páginas lejanas con guiones', () => {
   assert.deepEqual(pageWindow(0, 10), [0, 1, 9])
   assert.deepEqual(pageWindow(5, 10), [0, 4, 5, 6, 9])
+})
+
+console.log('domain.js · rutas por rol')
+
+check('homePathForRole manda a cada rol a su área (sin bucles)', () => {
+  assert.equal(homePathForRole(ROLES.BUSINESS_OWNER), '/panel')
+  assert.equal(homePathForRole(ROLES.CLIENT), '/mis-citas')
+  assert.equal(homePathForRole(ROLES.ADMIN), '/')
+  assert.equal(homePathForRole(null), '/')
+})
+
+console.log('viewState.js · estados de carga')
+
+check('resolveListState nunca mezcla error con vacío', () => {
+  assert.equal(resolveListState({ loading: true, error: false, count: 0 }), 'loading')
+  assert.equal(resolveListState({ loading: true, error: true, count: 3 }), 'loading')
+  assert.equal(resolveListState({ loading: false, error: true, count: 0 }), 'error')
+  assert.equal(resolveListState({ loading: false, error: false, count: 0 }), 'empty')
+  assert.equal(resolveListState({ loading: false, error: false, count: 3 }), 'data')
+})
+
+check('resolvePanelState bloquea el panel hasta resolver carga y error', () => {
+  assert.equal(resolvePanelState({ loading: true, error: false }), 'loading')
+  assert.equal(resolvePanelState({ loading: true, error: true }), 'loading')
+  assert.equal(resolvePanelState({ loading: false, error: true }), 'error')
+  assert.equal(resolvePanelState({ loading: false, error: false }), 'ready')
 })
 
 console.log(`\n${checks} comprobaciones correctas.`)

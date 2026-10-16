@@ -90,3 +90,14 @@ export const ROLE_LABELS = {
   BUSINESS_OWNER: 'Propietario',
   ADMIN: 'Administrador',
 }
+
+/**
+ * Ruta de inicio según el rol. El propietario vive en el panel y el cliente en
+ * "Mis citas"; cualquier otro rol (o sin sesión) vuelve al inicio público para
+ * no acabar en un bucle de redirecciones entre áreas de distinto rol.
+ */
+export function homePathForRole(role) {
+  if (role === ROLES.BUSINESS_OWNER) return '/panel'
+  if (role === ROLES.CLIENT) return '/mis-citas'
+  return '/'
+}

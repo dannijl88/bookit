@@ -1,13 +1,11 @@
-import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { ROLES } from '../lib/domain'
-import { Card } from '../components/ui/Card'
-import { buttonClasses } from '../components/ui/Button'
+import { homePathForRole, ROLES } from '../lib/domain'
 
 /** Si ya hay sesión, no tiene sentido mostrar login/registro. */
 export function GuestRoute() {
-  const { isAuthenticated } = useAuth()
-  if (isAuthenticated) return <Navigate to="/mis-citas" replace />
+  const { isAuthenticated, role } = useAuth()
+  if (isAuthenticated) return <Navigate to={homePathForRole(role)} replace />
   return <Outlet />
 }
 
@@ -21,7 +19,12 @@ export function ProtectedRoute() {
   return <Outlet />
 }
 
-/** Exige sesión y un rol concreto (por defecto, propietario). */
+/**
+ * Exige sesión y un rol concreto (por defecto, propietario). Si el rol no
+ * coincide llevamos al usuario a SU área (el propietario al panel, el cliente a
+ * "Mis citas"): así nadie aterriza en una pantalla que el backend le va a
+ * responder con 403.
+ */
 export function RoleRoute({ role = ROLES.BUSINESS_OWNER }) {
   const { isAuthenticated, role: currentRole } = useAuth()
   const location = useLocation()
@@ -31,30 +34,7 @@ export function RoleRoute({ role = ROLES.BUSINESS_OWNER }) {
   }
 
   if (currentRole !== role) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
-        <Card className="p-8 text-center">
-          <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-2xl">
-            🔒
-          </span>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            Área exclusiva de propietarios
-          </h1>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">
-            Tu cuenta no tiene el rol de propietario. Si gestionas un negocio, crea una cuenta
-            de negocio para publicar tu ficha y gestionar tus citas.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link to="/businesses" className={buttonClasses({ variant: 'secondary' })}>
-              Volver a los negocios
-            </Link>
-            <Link to="/mis-citas" className={buttonClasses()}>
-              Ver mis citas
-            </Link>
-          </div>
-        </Card>
-      </div>
-    )
+    return <Navigate to={homePathForRole(currentRole)} replace />
   }
 
   return <Outlet />

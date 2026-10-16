@@ -3,6 +3,7 @@ import { businessApi, ownerApi } from '../../api'
 import useAsync from '../../hooks/useAsync'
 import { useToast } from '../../hooks/useToast'
 import { extractApiError } from '../../lib/errors'
+import { resolveListState } from '../../lib/viewState'
 import { formatDuration, formatPrice } from '../../lib/format'
 import { Card } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -39,6 +40,11 @@ export default function OwnerServicesPage() {
   if (!business) return <EmptyBusinessState />
 
   const list = services.data || []
+  const listState = resolveListState({
+    loading: services.loading,
+    error: Boolean(services.errorMessage),
+    count: list.length,
+  })
 
   /**
    * Validación local obligatoria: el backend no devuelve los mensajes de Bean
@@ -113,15 +119,15 @@ export default function OwnerServicesPage() {
           Sólo los servicios activos aparecen en la ficha pública y admiten reservas.
         </p>
 
-        {services.loading && <LoadingBlock label="Cargando servicios…" />}
+        {listState === 'loading' && <LoadingBlock label="Cargando servicios…" />}
 
-        {services.errorMessage && (
+        {listState === 'error' && (
           <Alert tone="error" className="mt-4">
             {services.errorMessage}
           </Alert>
         )}
 
-        {!services.loading && list.length === 0 && (
+        {listState === 'empty' && (
           <EmptyState
             className="mt-4"
             icon="💇"
@@ -130,7 +136,7 @@ export default function OwnerServicesPage() {
           />
         )}
 
-        {list.length > 0 && (
+        {listState === 'data' && (
           <div className="mt-4 space-y-3">
             {list.map((service) => (
               <Card key={service.id} className="flex flex-wrap items-center gap-4 p-4 sm:p-5">

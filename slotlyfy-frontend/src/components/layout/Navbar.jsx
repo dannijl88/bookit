@@ -39,7 +39,7 @@ const navLinkClasses = ({ isActive }) =>
   }`
 
 export default function Navbar() {
-  const { isAuthenticated, user, role, isOwner, logout } = useAuth()
+  const { isAuthenticated, user, role, isOwner, isClient, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef(null)
@@ -63,7 +63,7 @@ export default function Navbar() {
 
   const links = [
     { to: '/businesses', label: 'Negocios' },
-    ...(isAuthenticated ? [{ to: '/mis-citas', label: 'Mis citas' }] : []),
+    ...(isClient ? [{ to: '/mis-citas', label: 'Mis citas' }] : []),
     ...(isOwner ? [{ to: '/panel', label: 'Panel' }] : []),
   ]
 

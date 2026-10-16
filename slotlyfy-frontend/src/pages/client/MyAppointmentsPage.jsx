@@ -4,6 +4,7 @@ import { appointmentApi } from '../../api'
 import useAsync from '../../hooks/useAsync'
 import { useToast } from '../../hooks/useToast'
 import { extractApiError } from '../../lib/errors'
+import { resolveListState } from '../../lib/viewState'
 import { APPOINTMENT_STATUSES, STATUS_META } from '../../lib/domain'
 import { formatDate, formatTime, relativeDayLabel } from '../../lib/format'
 import { Card, SectionHeading, StatusBadge } from '../../components/ui/Card'
@@ -31,6 +32,11 @@ export default function MyAppointmentsPage() {
   )
 
   const appointments = data?.content || []
+  const listState = resolveListState({
+    loading,
+    error: Boolean(errorMessage),
+    count: appointments.length,
+  })
 
   /**
    * El backend no permite filtrar por estado en GET /api/appointments/me, así
@@ -112,9 +118,9 @@ export default function MyAppointmentsPage() {
         </Alert>
       )}
 
-      {loading && <LoadingBlock label="Cargando tus citas…" />}
+      {listState === 'loading' && <LoadingBlock label="Cargando tus citas…" />}
 
-      {!loading && appointments.length === 0 && (
+      {listState === 'empty' && (
         <EmptyState
           icon="🗓️"
           title="Todavía no tienes citas"
@@ -127,7 +133,7 @@ export default function MyAppointmentsPage() {
         />
       )}
 
-      {!loading && appointments.length > 0 && visible.length === 0 && (
+      {listState === 'data' && visible.length === 0 && (
         <EmptyState
           icon="🔍"
           title="No hay citas con ese estado en esta página"
