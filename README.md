@@ -195,6 +195,7 @@ La demo está desplegada con esta configuración en el plan gratuito de Render c
 | `CORS_ALLOWED_ORIGINS` | Sí | Origen del frontend desplegado (p. ej. `https://bookit-gamma-three.vercel.app`). |
 | `DEMO_SEED` | No | `true` carga datos de ejemplo (idempotente). |
 | `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` | No | Si no se configuran, la app arranca igual y simplemente no envía correos. |
+| `MAIL_FROM` | No | Remitente de los correos (por defecto `noreply@bookit.com`). Debe ser una dirección permitida por tu proveedor SMTP (usuario autenticado o dominio verificado). |
 | `DB_POOL_SIZE` | No | Conexiones del pool de Hikari (por defecto 5, alineado con el límite de Neon). |
 | `DB_DDL_AUTO` | No | Estrategia de Hibernate (por defecto `validate`; Flyway es el dueño del esquema). |
 
