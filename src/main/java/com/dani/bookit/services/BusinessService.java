@@ -46,7 +46,7 @@ public class BusinessService {
     @Transactional(readOnly = true)
      @Cacheable(value = "businesses", key = "#category + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
      public Page<BusinessResponseDto> findByCategory(String category, Pageable pageable){
-         return repository.findByCategoryIgnoreCaseAndActiveTrue(category, pageable).map(BusinessMapper::toResponseDto);
+         return repository.findActiveByCategoryIgnoringAccents(category, pageable).map(BusinessMapper::toResponseDto);
      }
 
     @Transactional(readOnly = true)
