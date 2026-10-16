@@ -60,9 +60,9 @@ export function SectionHeading({ title, description, action, className = '' }) {
 
 /* --------------------------------------------------------------- estrellas */
 
-function Star({ filled }) {
+function Star({ filled, className = 'h-4 w-4' }) {
   return (
-    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 20 20" className={`${className} shrink-0`} aria-hidden="true">
       <path
         d="M10 1.8l2.35 4.76 5.25.77-3.8 3.7.9 5.23L10 13.79l-4.7 2.47.9-5.23-3.8-3.7 5.25-.77L10 1.8Z"
         fill={filled ? 'currentColor' : 'none'}
@@ -112,9 +112,9 @@ export function StarPicker({ value, onChange, disabled = false, className = '' }
             onClick={() => onChange(star)}
             aria-label={`${star} ${star === 1 ? 'estrella' : 'estrellas'} — ${STAR_LABELS[star - 1]}`}
             aria-pressed={value === star}
-            className="rounded-lg p-1 transition enabled:hover:scale-110 disabled:cursor-not-allowed"
+            className="rounded-lg p-2.5 transition enabled:hover:scale-110 disabled:cursor-not-allowed"
           >
-            <Star filled={star <= active} />
+            <Star filled={star <= active} className="h-5 w-5" />
           </button>
         ))}
       </div>

@@ -246,7 +246,7 @@ function StatusChip({ active, label, onClick }) {
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+      className={`inline-flex min-h-10 items-center rounded-full border px-4 text-sm font-semibold transition ${
         active
           ? 'border-brand-600 bg-brand-600 text-white shadow-sm'
           : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'

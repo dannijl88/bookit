@@ -11,14 +11,23 @@ export default function Footer() {
           </p>
         </div>
 
-        <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm" aria-label="Enlaces del pie">
-          <Link to="/businesses" className="text-slate-500 transition hover:text-slate-900">
+        <nav className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm" aria-label="Enlaces del pie">
+          <Link
+            to="/businesses"
+            className="inline-flex min-h-10 items-center text-slate-500 transition hover:text-slate-900"
+          >
             Explorar negocios
           </Link>
-          <Link to="/mis-citas" className="text-slate-500 transition hover:text-slate-900">
+          <Link
+            to="/mis-citas"
+            className="inline-flex min-h-10 items-center text-slate-500 transition hover:text-slate-900"
+          >
             Mis citas
           </Link>
-          <Link to="/panel" className="text-slate-500 transition hover:text-slate-900">
+          <Link
+            to="/panel"
+            className="inline-flex min-h-10 items-center text-slate-500 transition hover:text-slate-900"
+          >
             Panel de negocio
           </Link>
         </nav>

@@ -72,7 +72,7 @@ export default function Modal({
             <button
               type="button"
               onClick={onClose}
-              className="-m-1.5 shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              className="-m-1.5 inline-flex shrink-0 items-center justify-center rounded-lg p-2.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               aria-label="Cerrar"
             >
               <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden="true">

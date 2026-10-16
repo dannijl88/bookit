@@ -60,7 +60,7 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:py-16">
-      <div className="order-2 lg:order-1">
+      <div className="lg:order-1">
         <AuthAside
           title="Hola de nuevo"
           subtitle="Accede a tus citas, revisa tus reservas y gestiona tu perfil."
@@ -113,7 +113,7 @@ export default function LoginPage() {
         </form>
       </div>
 
-      <div className="order-1 lg:order-2">
+      <div className="lg:order-2">
         <div className="lg:sticky lg:top-24">
           <div className="relative overflow-hidden rounded-3xl bg-brand-950 p-8 text-white shadow-pop sm:p-10">
             <div

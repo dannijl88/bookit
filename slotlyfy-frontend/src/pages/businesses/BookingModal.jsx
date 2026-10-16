@@ -444,7 +444,7 @@ function SummaryStrip({ service, employee, date, onEdit }) {
   return (
     <div className="flex items-start justify-between gap-3 rounded-2xl bg-brand-50/70 px-4 py-3 ring-1 ring-brand-100">
       <div className="min-w-0 text-sm">
-        <p className="font-semibold text-brand-900">{service?.name || 'Sin servicio'}</p>
+        <p className="truncate font-semibold text-brand-900">{service?.name || 'Sin servicio'}</p>
         <p className="mt-0.5 truncate text-brand-700">
           {employee?.name || 'Sin profesional'} ·{' '}
           {date ? `${formatLongDate(date)}` : 'sin fecha'}
@@ -461,7 +461,7 @@ function Row({ label, value }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
       <dt className="shrink-0 text-slate-500">{label}</dt>
-      <dd className="text-right font-semibold text-slate-900">{value}</dd>
+      <dd className="min-w-0 text-right font-semibold break-words text-slate-900">{value}</dd>
     </div>
   )
 }

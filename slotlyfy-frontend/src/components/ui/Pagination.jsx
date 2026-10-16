@@ -17,7 +17,7 @@ export default function Pagination({ page, totalPages, totalElements, onChange, 
   const pages = pageWindow(page, totalPages)
 
   const buttonBase =
-    'inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-2.5 text-sm font-semibold transition'
+    'inline-flex h-10 min-w-10 items-center justify-center rounded-lg px-2.5 text-sm font-semibold transition'
 
   const navButton = (label, target, disabled) => (
     <button
@@ -46,7 +46,7 @@ export default function Pagination({ page, totalPages, totalElements, onChange, 
         {totalElements} {totalElements === 1 ? 'resultado' : 'resultados'}
       </p>
 
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center justify-center gap-1">
         {navButton('‹', page - 1, page <= 0)}
 
         {pages.map((index, position) => {
