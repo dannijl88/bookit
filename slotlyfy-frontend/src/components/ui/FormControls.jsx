@@ -1,7 +1,7 @@
 import { useId } from 'react'
 
 const CONTROL =
-  'w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-900 ' +
+  'w-full rounded-xl border border-slate-300 bg-white px-3.5 text-base text-slate-900 sm:text-sm ' +
   'shadow-xs transition placeholder:text-slate-400 ' +
   'focus:border-brand-500 focus:ring-4 focus:ring-brand-500/12 focus:outline-none ' +
   'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500'

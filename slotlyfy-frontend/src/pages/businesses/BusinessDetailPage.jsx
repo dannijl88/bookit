@@ -25,17 +25,10 @@ export default function BusinessDetailPage() {
   const [booking, setBooking] = useState(null)
 
   /**
-   * El listado de negocios es paginado y no hay GET /api/businesses/{id}, así que
-   * recuperamos la ficha barriendo el catálogo (misma llamada que usa el listado
-   * con "Todos") y localizamos el id.
+   * GET /api/businesses/{id} devuelve una sola ficha (el backend responde 404 si
+   * el negocio no existe o está desactivado).
    */
-  const businesses = useAsync(
-    () => businessApi.listAllBusinesses({ page: 0, size: 50 }),
-    [businessId],
-  )
-
-  const business =
-    businesses.data?.content?.find((item) => String(item.id) === String(businessId)) || null
+  const businessQuery = useAsync(() => businessApi.getBusiness(businessId), [businessId])
 
   const services = useAsync(() => businessApi.getBusinessServices(businessId), [businessId])
   const employees = useAsync(() => businessApi.getBusinessEmployees(businessId), [businessId])
@@ -51,13 +44,32 @@ export default function BusinessDetailPage() {
     { immediate: Boolean(firstEmployeeId) },
   )
 
-  if (businesses.loading) return <PageLoader label="Cargando negocio…" />
+  if (businessQuery.loading) return <PageLoader label="Cargando negocio…" />
 
-  if (businesses.errorMessage) {
+  if (businessQuery.errorMessage) {
+    // Un 404 (no existe o está desactivado) se muestra como "no encontrado";
+    // cualquier otro fallo (red, servidor) se muestra como error.
+    const notFound = businessQuery.error?.response?.status === 404
+    if (notFound) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+          <EmptyState
+            icon="🏪"
+            title="No hemos encontrado este negocio"
+            description="Puede que el enlace no sea correcto o que el negocio ya no esté disponible."
+            action={
+              <Link to="/businesses" className={buttonClasses()}>
+                Ver todos los negocios
+              </Link>
+            }
+          />
+        </div>
+      )
+    }
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <Alert tone="error" title="No hemos podido cargar el negocio">
-          {businesses.errorMessage}
+          {businessQuery.errorMessage}
         </Alert>
         <Link to="/businesses" className={`${buttonClasses({ variant: 'secondary' })} mt-6`}>
           Volver al listado
@@ -66,22 +78,7 @@ export default function BusinessDetailPage() {
     )
   }
 
-  if (!business) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <EmptyState
-          icon="🏪"
-          title="No hemos encontrado este negocio"
-          description="Puede que el enlace no sea correcto o que el negocio ya no esté disponible."
-          action={
-            <Link to="/businesses" className={buttonClasses()}>
-              Ver todos los negocios
-            </Link>
-          }
-        />
-      </div>
-    )
-  }
+  const business = businessQuery.data
 
   const meta = getCategoryMeta(business.category)
   const serviceList = services.data || []
@@ -90,12 +87,12 @@ export default function BusinessDetailPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-      <nav className="mb-5 text-sm text-slate-500" aria-label="Migas de pan">
+      <nav className="mb-5 flex items-center text-sm text-slate-500" aria-label="Migas de pan">
         <Link to="/businesses" className="font-medium transition hover:text-slate-900">
           Negocios
         </Link>
         <span className="mx-2 text-slate-300">/</span>
-        <span className="text-slate-700">{business.name}</span>
+        <span className="min-w-0 truncate text-slate-700">{business.name}</span>
       </nav>
 
       <Card className="overflow-hidden">
@@ -314,8 +311,8 @@ function TeamTab({ employees, schedules, firstEmployeeName, loading }) {
               const shifts = grouped.get(day.value) || []
               return (
                 <li key={day.value} className="flex items-center justify-between gap-4 py-2.5">
-                  <span className="text-sm font-medium text-slate-700">{day.label}</span>
-                  <span className="text-sm text-slate-500">
+                  <span className="shrink-0 text-sm font-medium text-slate-700">{day.label}</span>
+                  <span className="min-w-0 text-right text-sm break-words text-slate-500">
                     {shifts.length === 0
                       ? 'Cerrado'
                       : shifts
@@ -388,18 +385,18 @@ function ReviewsTab({ businessId }) {
         {reviews.map((review) => (
           <Card key={review.id} className="p-5">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
                   {(review.clientName || '?').charAt(0).toUpperCase()}
                 </span>
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{review.clientName}</p>
-                  <p className="text-xs text-slate-500">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-900">{review.clientName}</p>
+                  <p className="truncate text-xs text-slate-500">
                     {review.serviceName} · con {review.employeeName}
                   </p>
                 </div>
               </div>
-              <Stars value={review.rating} />
+              <Stars value={review.rating} className="shrink-0" />
             </div>
             {review.comment && (
               <p className="mt-3 text-sm leading-relaxed text-slate-600">{review.comment}</p>

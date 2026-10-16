@@ -46,7 +46,7 @@ public class BusinessService {
     @Transactional(readOnly = true)
      @Cacheable(value = "businesses", key = "#category + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
      public Page<BusinessResponseDto> findByCategory(String category, Pageable pageable){
-         return repository.findByCategoryIgnoreCaseAndActiveTrue(category, pageable).map(BusinessMapper::toResponseDto);
+         return repository.findActiveByCategoryIgnoringAccents(category, pageable).map(BusinessMapper::toResponseDto);
      }
 
     @Transactional(readOnly = true)
@@ -55,6 +55,22 @@ public class BusinessService {
         User owner = userRepository.findById(ownerId).orElseThrow(() ->
                 new ResourceNotFoundException("User not found with id: " + ownerId));
         return repository.findByOwner(owner).stream().map(BusinessMapper::toResponseDto).toList();
+    }
+
+    /**
+     * Ficha pública de un negocio. Solo se devuelven negocios activos: uno
+     * desactivado deja de ser visible y responde como "no encontrado", igual
+     * que el listado por categoría.
+     */
+    @Transactional(readOnly = true)
+    @Cacheable(value = "businesses", key = "'id-' + #id")
+    public BusinessResponseDto findById(Long id){
+        Business business = repository.findById(id).orElseThrow(() ->
+                new ResourceNotFoundException("Business not found with id: " + id));
+        if(Boolean.FALSE.equals(business.getActive())){
+            throw new ResourceNotFoundException("Business not found with id: " + id);
+        }
+        return BusinessMapper.toResponseDto(business);
     }
 
     @Transactional

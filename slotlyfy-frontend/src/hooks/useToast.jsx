@@ -92,10 +92,10 @@ export function ToastProvider({ children }) {
                 <button
                   type="button"
                   onClick={() => dismiss(toast.id)}
-                  className="-m-1 rounded-lg p-1 opacity-50 transition hover:opacity-100"
+                  className="-m-1 inline-flex shrink-0 items-center justify-center rounded-lg p-2.5 opacity-50 transition hover:opacity-100"
                   aria-label="Cerrar aviso"
                 >
-                  <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
                     <path
                       d="m5 5 10 10M15 5 5 15"
                       stroke="currentColor"

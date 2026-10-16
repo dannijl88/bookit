@@ -47,10 +47,10 @@ export function Alert({ tone = 'info', title, children, className = '', onDismis
         <button
           type="button"
           onClick={onDismiss}
-          className="-m-1 rounded-lg p-1 opacity-60 transition hover:opacity-100"
+          className="-m-1.5 inline-flex shrink-0 items-center justify-center rounded-lg p-2.5 opacity-60 transition hover:opacity-100"
           aria-label="Cerrar aviso"
         >
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
             <path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" strokeWidth="1.8" fill="none" />
           </svg>
         </button>
