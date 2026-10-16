@@ -163,7 +163,7 @@ Detalles de la implementación:
 - El backend se construye en una imagen multi-stage (`eclipse-temurin:25-jdk-noble` → `eclipse-temurin:25-jre-alpine`) y corre como usuario sin privilegios. Las dependencias de Maven se descargan en una capa que solo se invalida cuando cambia el `pom.xml`.
 - El frontend se compila con `node:22-alpine` y se sirve con `nginx:1.27-alpine`; la URL de la API (`VITE_API_URL`) se incrusta en el bundle en tiempo de build.
 - Los secretos y la configuración se leen de `.env` (`docker-compose.yml` no hardcodea nada). El backend sobrescribe el datasource de `application.properties` vía variables de entorno (`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`).
-- El backend espera a que PostgreSQL esté sano (`healthcheck` con `pg_isready` + `depends_on: condition: service_healthy`) antes de arrancar; Hibernate crea el esquema con `ddl-auto=update`.
+- El backend espera a que PostgreSQL esté sano (`healthcheck` con `pg_isready` + `depends_on: condition: service_healthy`) antes de arrancar; **Flyway** crea el esquema aplicando las migraciones de `src/main/resources/db/migration` y Hibernate solo valida (`ddl-auto=validate`).
 
 ## Arquitectura de despliegue
 
@@ -196,9 +196,18 @@ La demo está desplegada con esta configuración en el plan gratuito de Render c
 | `DEMO_SEED` | No | `true` carga datos de ejemplo (idempotente). |
 | `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` | No | Si no se configuran, la app arranca igual y simplemente no envía correos. |
 | `DB_POOL_SIZE` | No | Conexiones del pool de Hikari (por defecto 5, alineado con el límite de Neon). |
-| `DB_DDL_AUTO` | No | Estrategia de Hibernate (por defecto `update`; usar `validate` cuando existan migraciones). |
+| `DB_DDL_AUTO` | No | Estrategia de Hibernate (por defecto `validate`; Flyway es el dueño del esquema). |
 
 > En el plan gratuito de Render el servicio se **duerme** por inactividad: la primera petición después de un rato puede tardar alrededor de un minuto (arranque en frío de la JVM).
+
+## Migraciones de base de datos (Flyway)
+
+El esquema lo versiona **Flyway**; Hibernate corre en `ddl-auto=validate` y solo comprueba que las entidades coinciden con el esquema migrado.
+
+- Las migraciones viven en `src/main/resources/db/migration` con el nombre `V<n>__descripcion.sql`.
+- `V1__baseline.sql` reproduce el esquema inicial (generado a partir del DDL real de Hibernate).
+- `spring.flyway.baseline-on-migrate=true` y `spring.flyway.baseline-version=1`: sobre una base **no vacía sin historial** (como la de la demo en Neon, que ya tenía las tablas) Flyway marca la V1 como aplicada **sin ejecutarla** y solo aplica migraciones nuevas (V2 en adelante). Sobre una base **vacía** (tests, entornos nuevos) ejecuta la V1 normalmente.
+- Para añadir cambios de esquema en el futuro, crea `V2__...sql`, `V3__...sql`, etc. (nunca edites una migración ya aplicada).
 
 ## Endpoints principales
 
