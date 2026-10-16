@@ -91,7 +91,7 @@ public class AppointmentService {
         }
         appointment.setStatus(dto.getStatus());
         repository.save(appointment);
-        publishAppointmentEmail(appointment.getClient().getEmail(), "Estado de la cita actualizado", "Tu cita ha sido " + dto.getStatus());
+        publishStatusEmail(appointment);
         return AppointmentMapper.toDto(appointment);
 
     }
@@ -135,6 +135,32 @@ public class AppointmentService {
 
     private void publishAppointmentEmail(String to, String subject, String body){
         eventPublisher.publishEvent(new EmailNotificationEvent(to, subject, body));
+    }
+
+    private void publishStatusEmail(Appointment appointment){
+        Status status = appointment.getStatus();
+        String date = appointment.getAppointmentDatetime().toString();
+        String subject;
+        String body;
+        switch (status) {
+            case CONFIRMED -> {
+                subject = "Cita confirmada";
+                body = "Tu cita con fecha " + date + " ha sido confirmada.";
+            }
+            case CANCELLED -> {
+                subject = "Cita cancelada";
+                body = "Tu cita con fecha " + date + " ha sido cancelada por el negocio.";
+            }
+            case COMPLETED -> {
+                subject = "Cita completada";
+                body = "Tu cita con fecha " + date + " se ha marcado como completada. ¡Gracias!";
+            }
+            default -> {
+                subject = "Estado de la cita actualizado";
+                body = "Tu cita con fecha " + date + " tiene un nuevo estado: " + status + ".";
+            }
+        }
+        publishAppointmentEmail(appointment.getClient().getEmail(), subject, body);
     }
 
 }

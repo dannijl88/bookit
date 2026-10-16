@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -205,6 +206,59 @@ public class AppointmentServiceTest {
 
         verify(repository, never()).save(any());
 
+    }
+
+    @Test
+    void updateStatus_notifiesConfirmation_toTheClient(){
+
+        Appointment appointment = appointment(50L, Status.PENDING);
+
+        when(repository.findById(50L)).thenReturn(Optional.of(appointment));
+
+        appointmentService.updateStatus(50L, new UpdateStatusDto(Status.CONFIRMED), 1L);
+
+        EmailNotificationEvent event = capturedEmail();
+        assertThat(event.to()).isEqualTo("client@mail.com");
+        assertThat(event.subject()).isEqualTo("Cita confirmada");
+        assertThat(event.body()).contains("ha sido confirmada");
+
+    }
+
+    @Test
+    void updateStatus_notifiesCancellationByBusiness_toTheClient(){
+
+        Appointment appointment = appointment(50L, Status.PENDING);
+
+        when(repository.findById(50L)).thenReturn(Optional.of(appointment));
+
+        appointmentService.updateStatus(50L, new UpdateStatusDto(Status.CANCELLED), 1L);
+
+        EmailNotificationEvent event = capturedEmail();
+        assertThat(event.to()).isEqualTo("client@mail.com");
+        assertThat(event.subject()).isEqualTo("Cita cancelada");
+        assertThat(event.body()).contains("cancelada por el negocio");
+
+    }
+
+    @Test
+    void updateStatus_notifiesCompletion_toTheClient(){
+
+        Appointment appointment = appointment(50L, Status.CONFIRMED);
+
+        when(repository.findById(50L)).thenReturn(Optional.of(appointment));
+
+        appointmentService.updateStatus(50L, new UpdateStatusDto(Status.COMPLETED), 1L);
+
+        EmailNotificationEvent event = capturedEmail();
+        assertThat(event.subject()).isEqualTo("Cita completada");
+        assertThat(event.body()).contains("completada");
+
+    }
+
+    private EmailNotificationEvent capturedEmail(){
+        ArgumentCaptor<EmailNotificationEvent> captor = ArgumentCaptor.forClass(EmailNotificationEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        return captor.getValue();
     }
 
     private User user(Long id, String name, String email){
