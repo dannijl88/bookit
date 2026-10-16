@@ -44,6 +44,15 @@ export async function listAllBusinesses({ page = 0, size = DEFAULT_PAGE_SIZE }) 
   return buildPage(dedupeAndSort(merged), page, size)
 }
 
+/**
+ * GET /api/businesses/{id}. Público: devuelve una única ficha sin barrer el
+ * catálogo. Responde 404 si el negocio no existe o está desactivado.
+ */
+export async function getBusiness(businessId) {
+  const { data } = await http.get(`/api/businesses/${businessId}`)
+  return data
+}
+
 export async function getBusinessServices(businessId) {
   const { data } = await http.get(`/api/businesses/${businessId}/services`)
   return Array.isArray(data) ? data : []

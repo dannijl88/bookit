@@ -6,6 +6,7 @@ import com.dani.bookit.entities.Employee;
 import com.dani.bookit.entities.ServiceOffering;
 import com.dani.bookit.entities.User;
 import com.dani.bookit.exceptions.AccessDeniedCustomException;
+import com.dani.bookit.exceptions.ResourceNotFoundException;
 import com.dani.bookit.repositories.BusinessRepository;
 import com.dani.bookit.repositories.EmployeeRepository;
 import com.dani.bookit.repositories.ServiceOfferingRepository;
@@ -73,6 +74,41 @@ public class BusinessServiceTest {
 
         verify(repository, never()).save(business);
         verify(employeeRepository, never()).findByBusiness(business);
+    }
+
+    @Test
+    void findById_returnsBusiness_whenItIsActive(){
+
+        Business business = business(1L);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(business));
+
+        BusinessResponseDto result = businessService.findById(1L);
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("Business 1");
+        assertThat(result.getActive()).isTrue();
+    }
+
+    @Test
+    void findById_throws_whenBusinessDoesNotExist(){
+
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> businessService.findById(99L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void findById_throws_whenBusinessIsInactive(){
+
+        Business business = business(1L);
+        business.setActive(false);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(business));
+
+        assertThatThrownBy(() -> businessService.findById(1L))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     private Business business(Long id){

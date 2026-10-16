@@ -57,6 +57,22 @@ public class BusinessService {
         return repository.findByOwner(owner).stream().map(BusinessMapper::toResponseDto).toList();
     }
 
+    /**
+     * Ficha pública de un negocio. Solo se devuelven negocios activos: uno
+     * desactivado deja de ser visible y responde como "no encontrado", igual
+     * que el listado por categoría.
+     */
+    @Transactional(readOnly = true)
+    @Cacheable(value = "businesses", key = "'id-' + #id")
+    public BusinessResponseDto findById(Long id){
+        Business business = repository.findById(id).orElseThrow(() ->
+                new ResourceNotFoundException("Business not found with id: " + id));
+        if(Boolean.FALSE.equals(business.getActive())){
+            throw new ResourceNotFoundException("Business not found with id: " + id);
+        }
+        return BusinessMapper.toResponseDto(business);
+    }
+
     @Transactional
     @CacheEvict(value = "businesses", allEntries = true)
      public BusinessResponseDto update(BusinessRequestDto dto, Long businessId, Long userId){

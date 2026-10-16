@@ -63,6 +63,14 @@ public class BusinessController {
         return ResponseEntity.ok(service.findByCategory(category, pageable));
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtener negocio por id", description = "Obtiene la ficha pública de un negocio activo")
+    @ApiResponse(responseCode = "200", description = "Negocio obtenido correctamente")
+    @ApiResponse(responseCode = "404", description = "Negocio no encontrado o desactivado")
+    public ResponseEntity<BusinessResponseDto> getBusinessById(@PathVariable Long id){
+        return ResponseEntity.ok(service.findById(id));
+    }
+
     @GetMapping("/mine")
     @PreAuthorize("hasRole('BUSINESS_OWNER')")
     @Operation(summary = "Mis negocios", description = "Obtiene los negocios del propietario autenticado")

@@ -25,17 +25,10 @@ export default function BusinessDetailPage() {
   const [booking, setBooking] = useState(null)
 
   /**
-   * El listado de negocios es paginado y no hay GET /api/businesses/{id}, así que
-   * recuperamos la ficha barriendo el catálogo (misma llamada que usa el listado
-   * con "Todos") y localizamos el id.
+   * GET /api/businesses/{id} devuelve una sola ficha (el backend responde 404 si
+   * el negocio no existe o está desactivado).
    */
-  const businesses = useAsync(
-    () => businessApi.listAllBusinesses({ page: 0, size: 50 }),
-    [businessId],
-  )
-
-  const business =
-    businesses.data?.content?.find((item) => String(item.id) === String(businessId)) || null
+  const businessQuery = useAsync(() => businessApi.getBusiness(businessId), [businessId])
 
   const services = useAsync(() => businessApi.getBusinessServices(businessId), [businessId])
   const employees = useAsync(() => businessApi.getBusinessEmployees(businessId), [businessId])
@@ -51,13 +44,32 @@ export default function BusinessDetailPage() {
     { immediate: Boolean(firstEmployeeId) },
   )
 
-  if (businesses.loading) return <PageLoader label="Cargando negocio…" />
+  if (businessQuery.loading) return <PageLoader label="Cargando negocio…" />
 
-  if (businesses.errorMessage) {
+  if (businessQuery.errorMessage) {
+    // Un 404 (no existe o está desactivado) se muestra como "no encontrado";
+    // cualquier otro fallo (red, servidor) se muestra como error.
+    const notFound = businessQuery.error?.response?.status === 404
+    if (notFound) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+          <EmptyState
+            icon="🏪"
+            title="No hemos encontrado este negocio"
+            description="Puede que el enlace no sea correcto o que el negocio ya no esté disponible."
+            action={
+              <Link to="/businesses" className={buttonClasses()}>
+                Ver todos los negocios
+              </Link>
+            }
+          />
+        </div>
+      )
+    }
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <Alert tone="error" title="No hemos podido cargar el negocio">
-          {businesses.errorMessage}
+          {businessQuery.errorMessage}
         </Alert>
         <Link to="/businesses" className={`${buttonClasses({ variant: 'secondary' })} mt-6`}>
           Volver al listado
@@ -66,22 +78,7 @@ export default function BusinessDetailPage() {
     )
   }
 
-  if (!business) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <EmptyState
-          icon="🏪"
-          title="No hemos encontrado este negocio"
-          description="Puede que el enlace no sea correcto o que el negocio ya no esté disponible."
-          action={
-            <Link to="/businesses" className={buttonClasses()}>
-              Ver todos los negocios
-            </Link>
-          }
-        />
-      </div>
-    )
-  }
+  const business = businessQuery.data
 
   const meta = getCategoryMeta(business.category)
   const serviceList = services.data || []

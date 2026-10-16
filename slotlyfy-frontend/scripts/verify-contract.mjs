@@ -70,6 +70,8 @@ const ROUTES = {
   'GET /api/users/me': () => [200, { id: 42, name: 'Ana', email: 'a@b.com', phone: '600', role: 'CLIENT' }],
   'POST /api/users': () => (scenario.emailTaken ? [409, 'Email already in use'] : [201, { ...BUSINESS, id: 42, role: 'CLIENT' }]),
   'GET /api/businesses': () => [200, page([BUSINESS])],
+  'GET /api/businesses/1': () => [200, BUSINESS],
+  'GET /api/businesses/999': () => [404, 'Business not found with id: 999'],
   'GET /api/businesses/mine': () => [200, [BUSINESS]],
   'GET /api/businesses/1/services': () => [200, [{ id: 3, name: 'Corte', description: 'Corte unisex', price: 24.5, duration: 45, businessId: 1, businessName: 'Studio Bella', active: true }]],
   'GET /api/businesses/1/employees': () => [200, [{ id: 9, name: 'Lucía', active: true, businessId: 1, businessName: 'Studio Bella' }]],
@@ -227,6 +229,24 @@ await check('listAllBusinesses barre las 10 categorías y deduplica', async () =
   const result = await businessApi.listAllBusinesses({ page: 0, size: 10 })
   assert.equal(recorded.length - before, 10, 'una petición por categoría')
   assert.equal(result.content.length, 1, 'deduplica el mismo negocio 10 veces')
+})
+
+await check('getBusiness pide una sola ficha por id (sin barrer el catálogo)', async () => {
+  const before = recorded.length
+  const one = await businessApi.getBusiness(1)
+  assert.equal(recorded.length - before, 1, 'una sola petición')
+  assert.equal(last().path, '/api/businesses/1')
+  assert.equal(one.name, 'Studio Bella')
+})
+
+await check('getBusiness propaga el 404 de un negocio inexistente', async () => {
+  await assert.rejects(
+    () => businessApi.getBusiness(999),
+    (error) => {
+      assert.equal(error.response.status, 404)
+      return true
+    },
+  )
 })
 
 await check('getMyBusinesses lee /api/businesses/mine con Authorization', async () => {
