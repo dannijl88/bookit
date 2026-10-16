@@ -52,7 +52,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                 passwordEncoder.encode(DEMO_PASSWORD), "600333444", Role.CLIENT));
 
         Business business = businessRepository.save(new Business(null, "Peluquería Demo",
-                "Calle Mayor 1, Madrid", "910000000", "peluqueria", "09:00-20:00", true, owner));
+                "Calle Mayor 1, Madrid", "910000000", "Peluquería", "09:00-20:00", true, owner));
 
         Employee ana = employeeRepository.save(new Employee(null, "Ana", true, business, null));
         Employee luis = employeeRepository.save(new Employee(null, "Luis", true, business, null));
