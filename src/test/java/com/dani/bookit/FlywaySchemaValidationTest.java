@@ -46,6 +46,11 @@ class FlywaySchemaValidationTest {
 				Integer.class);
 		assertThat(appliedV2).isEqualTo(1);
 
+		Integer appliedV3 = jdbcTemplate.queryForObject(
+				"select count(*) from flyway_schema_history where version = '3' and success = true",
+				Integer.class);
+		assertThat(appliedV3).isEqualTo(1);
+
 		for (String table : new String[]{"appointments", "business", "employees",
 				"employee_schedule", "reviews", "services", "time_off", "users"}) {
 			Integer exists = jdbcTemplate.queryForObject(
