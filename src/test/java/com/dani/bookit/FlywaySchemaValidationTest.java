@@ -36,13 +36,18 @@ class FlywaySchemaValidationTest {
 
 	@Test
 	void flywayAppliesBaselineAndHibernateValidatesIt() {
-		Integer applied = jdbcTemplate.queryForObject(
+		Integer appliedV1 = jdbcTemplate.queryForObject(
 				"select count(*) from flyway_schema_history where version = '1' and success = true",
 				Integer.class);
-		assertThat(applied).isEqualTo(1);
+		assertThat(appliedV1).isEqualTo(1);
+
+		Integer appliedV2 = jdbcTemplate.queryForObject(
+				"select count(*) from flyway_schema_history where version = '2' and success = true",
+				Integer.class);
+		assertThat(appliedV2).isEqualTo(1);
 
 		for (String table : new String[]{"appointments", "business", "employees",
-				"employee_schedule", "reviews", "services", "users"}) {
+				"employee_schedule", "reviews", "services", "time_off", "users"}) {
 			Integer exists = jdbcTemplate.queryForObject(
 					"select count(*) from information_schema.tables where table_name = ?",
 					Integer.class, table);

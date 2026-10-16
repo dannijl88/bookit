@@ -6,6 +6,7 @@ import com.dani.bookit.repositories.AppointmentRepository;
 import com.dani.bookit.repositories.EmployeeRepository;
 import com.dani.bookit.repositories.EmployeeScheduleRepository;
 import com.dani.bookit.repositories.ServiceOfferingRepository;
+import com.dani.bookit.repositories.TimeOffRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class AvailabilityService {
     private final ServiceOfferingRepository serviceOfferingRepository;
     private final EmployeeScheduleRepository scheduleRepository;
     private final AppointmentRepository appointmentRepository;
+    private final TimeOffRepository timeOffRepository;
 
     @Transactional(readOnly = true)
     public List<LocalTime> getAvailableSlots(Long employeeId, Long serviceOfferingId, LocalDate date){
@@ -55,6 +57,7 @@ public class AvailabilityService {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
         List<Appointment> newHours = appointmentRepository.findByEmployeeAndAppointmentDatetimeBetween(employee, startOfDay, endOfDay);
+        List<TimeOff> timeOffs = timeOffRepository.findByEmployeeAndStartDatetimeLessThanAndEndDatetimeGreaterThan(employee, endOfDay, startOfDay);
         List<LocalTime> availableHours = new ArrayList<>();
         int durationMinutes = serviceOffering.getDuration();
         for (EmployeeSchedule schedule : schedules) {
@@ -70,7 +73,12 @@ public class AvailabilityService {
                     return finalSlotStart.isBefore(apptEnd) && apptStart.isBefore(slotEnd);
                 });
 
-                if (!overlaps) {
+                LocalDateTime slotStartDateTime = date.atTime(slotStart);
+                LocalDateTime slotEndDateTime = date.atTime(slotEnd);
+                boolean blocked = timeOffs.stream().anyMatch(timeOff ->
+                        slotStartDateTime.isBefore(timeOff.getEndDatetime()) && timeOff.getStartDatetime().isBefore(slotEndDateTime));
+
+                if (!overlaps && !blocked) {
                     availableHours.add(slotStart);
                 }
 

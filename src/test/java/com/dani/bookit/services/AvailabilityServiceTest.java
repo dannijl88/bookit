@@ -6,6 +6,7 @@ import com.dani.bookit.repositories.AppointmentRepository;
 import com.dani.bookit.repositories.EmployeeRepository;
 import com.dani.bookit.repositories.EmployeeScheduleRepository;
 import com.dani.bookit.repositories.ServiceOfferingRepository;
+import com.dani.bookit.repositories.TimeOffRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,6 +35,8 @@ public class AvailabilityServiceTest {
     private EmployeeScheduleRepository employeeScheduleRepository;
     @Mock
     private AppointmentRepository appointmentRepository;
+    @Mock
+    private TimeOffRepository timeOffRepository;
 
     @InjectMocks
     private AvailabilityService availabilityService;
@@ -194,6 +197,74 @@ public class AvailabilityServiceTest {
 
     }
 
+    @Test
+    void excludesAllSlots_whenTimeOffCoversTheWholeDay(){
+
+        EmployeeSchedule employeeSchedule = schedule(9, 14);
+        Business business = business(1L);
+        Employee employee = employee(business);
+        ServiceOffering serviceOffering = serviceOffering(business, 60);
+        LocalDate date = LocalDate.now().plusDays(1);
+        TimeOff timeOff = timeOff(date.atTime(0, 0), date.atTime(23, 59));
+
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+        when(serviceOfferingRepository.findById(1L)).thenReturn(Optional.of(serviceOffering));
+        when(employeeScheduleRepository.findByEmployeeAndDayOfWeek(employee, date.getDayOfWeek())).thenReturn(List.of(employeeSchedule));
+        when(appointmentRepository.findByEmployeeAndAppointmentDatetimeBetween(any(), any(), any())).thenReturn(List.of());
+        when(timeOffRepository.findByEmployeeAndStartDatetimeLessThanAndEndDatetimeGreaterThan(any(), any(), any())).thenReturn(List.of(timeOff));
+
+        List<LocalTime> slots = availabilityService.getAvailableSlots(1L, 1L, date);
+
+        assertThat(slots).isEmpty();
+
+    }
+
+    @Test
+    void excludesOnlyOverlappingSlots_whenTimeOffCoversPartOfTheDay(){
+
+        EmployeeSchedule employeeSchedule = schedule(9, 14);
+        Business business = business(1L);
+        Employee employee = employee(business);
+        ServiceOffering serviceOffering = serviceOffering(business, 60);
+        LocalDate date = LocalDate.now().plusDays(1);
+        TimeOff timeOff = timeOff(date.atTime(10, 0), date.atTime(12, 0));
+
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+        when(serviceOfferingRepository.findById(1L)).thenReturn(Optional.of(serviceOffering));
+        when(employeeScheduleRepository.findByEmployeeAndDayOfWeek(employee, date.getDayOfWeek())).thenReturn(List.of(employeeSchedule));
+        when(appointmentRepository.findByEmployeeAndAppointmentDatetimeBetween(any(), any(), any())).thenReturn(List.of());
+        when(timeOffRepository.findByEmployeeAndStartDatetimeLessThanAndEndDatetimeGreaterThan(any(), any(), any())).thenReturn(List.of(timeOff));
+
+        List<LocalTime> slots = availabilityService.getAvailableSlots(1L, 1L, date);
+
+        assertThat(slots).containsExactly(
+                LocalTime.of(9, 0), LocalTime.of(12, 0), LocalTime.of(13, 0));
+
+    }
+
+    @Test
+    void includesSlot_whenAppointmentAndTimeOffDoNotOverlap(){
+
+        EmployeeSchedule employeeSchedule = schedule(9, 14);
+        Business business = business(1L);
+        Employee employee = employee(business);
+        ServiceOffering serviceOffering = serviceOffering(business, 60);
+        LocalDate date = LocalDate.now().plusDays(1);
+        TimeOff timeOff = timeOff(date.atTime(12, 0), date.atTime(14, 0));
+
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+        when(serviceOfferingRepository.findById(1L)).thenReturn(Optional.of(serviceOffering));
+        when(employeeScheduleRepository.findByEmployeeAndDayOfWeek(employee, date.getDayOfWeek())).thenReturn(List.of(employeeSchedule));
+        when(appointmentRepository.findByEmployeeAndAppointmentDatetimeBetween(any(), any(), any())).thenReturn(List.of());
+        when(timeOffRepository.findByEmployeeAndStartDatetimeLessThanAndEndDatetimeGreaterThan(any(), any(), any())).thenReturn(List.of(timeOff));
+
+        List<LocalTime> slots = availabilityService.getAvailableSlots(1L, 1L, date);
+
+        assertThat(slots).containsExactly(
+                LocalTime.of(9, 0), LocalTime.of(10, 0), LocalTime.of(11, 0));
+
+    }
+
     private EmployeeSchedule schedule(int startHour, int endHour){
         EmployeeSchedule schedule = new EmployeeSchedule();
         schedule.setStartTime(LocalTime.of(startHour, 0));
@@ -226,6 +297,13 @@ public class AvailabilityServiceTest {
         appointment.setStatus(status);
         appointment.setServiceOffering(serviceOffering);
         return appointment;
+    }
+
+    private TimeOff timeOff(LocalDateTime start, LocalDateTime end){
+        TimeOff timeOff = new TimeOff();
+        timeOff.setStartDatetime(start);
+        timeOff.setEndDatetime(end);
+        return timeOff;
     }
 
 }

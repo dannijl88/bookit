@@ -231,6 +231,9 @@ El esquema lo versiona **Flyway**; Hibernate corre en `ddl-auto=validate` y solo
 | GET | `/api/businesses/{id}/appointments` | Citas del negocio (paginado) | `BUSINESS_OWNER` |
 | PATCH | `/api/appointments/{id}/status` | Cambiar estado de una cita | `BUSINESS_OWNER` |
 | POST | `/api/reviews?appointmentId=` | Dejar reseña (solo citas `COMPLETED`) | `CLIENT` |
+| POST | `/api/time-off?employeeId=` | Bloquear horas o días de un empleado | `BUSINESS_OWNER` |
+| GET | `/api/time-off/employee/{employeeId}` | Bloqueos de un empleado | `BUSINESS_OWNER` |
+| DELETE | `/api/time-off/{id}` | Eliminar un bloqueo | `BUSINESS_OWNER` |
 
 ## Documentación de la API (Swagger)
 
